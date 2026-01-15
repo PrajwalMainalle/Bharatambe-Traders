@@ -1,12 +1,13 @@
 import { HiOutlineMenu } from "react-icons/hi";
 import { useLocation } from "react-router-dom";
+import logo from "../assets/BTLogo.png";
 
 const Headers = ({ onMenuClick, setMobileOpen }) => {
   const location = useLocation();
 
   const getPageName = () => {
     const path = location.pathname.split("/").filter(Boolean);
-    if (path.length === 0) return "Dashboard";
+    if (path.length === 0) return "Home";
     return path[path.length - 1].replace(/^\w/, (c) => c.toUpperCase());
   };
 
@@ -25,8 +26,8 @@ const Headers = ({ onMenuClick, setMobileOpen }) => {
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="w-9 h-9 rounded-full bg-red-500 text-white flex items-center justify-center font-bold">
-          B
+        <div className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center font-bold">
+          <img src={logo} alt="Logo" className="w-8 h-8 rounded-full" />
         </div>
         <span className="font-semibold hidden sm:block">
           Bharatambe Traders
