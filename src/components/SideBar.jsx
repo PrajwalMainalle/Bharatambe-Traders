@@ -5,7 +5,7 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaTimes,
-  FaUser,
+  FaHome,
 } from "react-icons/fa";
 import { IoStorefront } from "react-icons/io5";
 import { BsBoxSeamFill } from "react-icons/bs";
@@ -19,8 +19,8 @@ const SideBar = ({
 
   // Desktop sidebar items
   const desktopNavItems = [
-    { name: "Dashboard", path: "/dashboard", icon: FaThLarge },
-    { name: "Categories", path: "/allCategory", icon: FaCube },
+    { name: "Home", path: "/home", icon: FaHome },
+    { name: "Categories", path: "/allCategories", icon: FaThLarge },
     { name: "Products", path: "/products", icon: BsBoxSeamFill },
     { name: "Nearby Stores", path: "/nearbyStores", icon: IoStorefront },
   ];
@@ -29,6 +29,10 @@ const SideBar = ({
   const mobileNavItems = [
     // { name: "Profile", path: "/profile", icon: FaUser },
   ];
+
+  const getCurrentYear = () => {
+    return new Date().getFullYear();
+  };
 
   return (
     <aside
@@ -113,6 +117,15 @@ const SideBar = ({
           ))}
         </div>
       </nav>
+
+      {/* Bottom  */}
+      <div className="p-4 border-t border-gray-700">
+        {!collapsed && (
+          <p className="text-sm text-gray-400">
+            &copy; {getCurrentYear()} Bharatambe Traders
+          </p>
+        )}
+      </div>
     </aside>
   );
 };

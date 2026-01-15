@@ -18,8 +18,8 @@ const AppRoutes = () => {
 
         {/* Layout Routes */}
         <Route element={<MainLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/allCategory" element={<AllCategoryPage />} />
+          <Route path="/home" element={<DashboardPage />} />
+          <Route path="/allCategories" element={<AllCategoryPage />} />
           <Route path="/nearbyStores" element={<NearByStoresPage />} />
            <Route path="/products" element={<ProductsPage />} /> 
         </Route>
