@@ -7,7 +7,7 @@ const Headers = ({ onMenuClick, setMobileOpen }) => {
 
   const getPageName = () => {
     const path = location.pathname.split("/").filter(Boolean);
-    if (path.length === 0) return "Dashboard";
+    if (path.length === 0) return "Home";
     return path[path.length - 1].replace(/^\w/, (c) => c.toUpperCase());
   };
 
