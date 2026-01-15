@@ -214,7 +214,12 @@ function Dashboard() {
       <section className="container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row justify-between gap-6">
           <div className="md:w-1/2">
-            <div className="relative rounded-lg overflow-hidden shadow-lg group">
+            <div
+              onClick={() => {
+                navigate("/products");
+              }}
+              className="relative rounded-lg overflow-hidden shadow-lg group"
+            >
               <img
                 src="https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=600&h=400&fit=crop"
                 alt="New Arrivals"
@@ -227,7 +232,12 @@ function Dashboard() {
             </div>
           </div>
           <div className="md:w-1/2">
-            <div className="relative rounded-lg overflow-hidden shadow-lg group">
+            <div
+              onClick={() => {
+                navigate("/nearbyStores");
+              }}
+              className="relative rounded-lg overflow-hidden shadow-lg group"
+            >
               <img
                 src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&h=400&fit=crop"
                 alt="Best Sellers"
@@ -262,7 +272,7 @@ function Dashboard() {
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
                 />
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-800">
@@ -285,23 +295,19 @@ function Dashboard() {
         <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           Store Tour & Demos
         </h2>
+
         <div className="max-w-4xl mx-auto">
           <div className="relative rounded-lg overflow-hidden shadow-2xl">
-            <div className="aspect-w-16 aspect-h-9">
-              <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-96 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="bg-white/20 backdrop-blur-sm rounded-full p-6 inline-block mb-4">
-                    <FaCirclePlay
-                      className="w-16 h-16 text-white"
-                      fill="white"
-                    />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">
-                    Store Virtual Tour
-                  </h3>
-                  <p className="text-white/90">See our products in action</p>
-                </div>
-              </div>
+            <div className="relative w-full pt-[56.25%]">
+              <iframe
+                src="https://www.youtube.com/embed/NIc8nQwBIDo?rel=0"
+                title="Store Tour Video"
+                className="absolute inset-0 w-full h-full"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
             </div>
           </div>
         </div>
