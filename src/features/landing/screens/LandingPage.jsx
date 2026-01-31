@@ -30,7 +30,7 @@ function LandingPage() {
             trusted by creators across India.
           </p>
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/home")}
             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition"
           >
             Start Exploring
@@ -190,10 +190,10 @@ function LandingPage() {
             Join thousands of creators discovering quality tools every day.
           </p>
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/home")}
             className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition"
           >
-            Go to Dashboard
+            Go to Home Page
           </button>
         </div>
       </section>
