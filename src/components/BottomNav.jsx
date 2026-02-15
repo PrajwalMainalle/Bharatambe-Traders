@@ -8,7 +8,7 @@ const BottomNav = () => {
     { name: "Home", path: "/home", icon: FaHome },
     { name: "Categories", path: "/allCategories", icon: FaThLarge },
     { name: "Products", path: "/products", icon: BsBoxSeamFill},
-    { name: "Stores", path: "/nearbyStores", icon: IoStorefront },
+    { name: "Stores", path: "/aboutStore", icon: IoStorefront },
   ];
 
   return (
