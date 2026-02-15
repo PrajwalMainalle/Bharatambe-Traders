@@ -22,7 +22,7 @@ const SideBar = ({
     { name: "Home", path: "/home", icon: FaHome },
     { name: "Categories", path: "/allCategories", icon: FaThLarge },
     { name: "Products", path: "/products", icon: BsBoxSeamFill },
-    { name: "Nearby Stores", path: "/nearbyStores", icon: IoStorefront },
+    { name: "About Store", path: "/aboutStore", icon: IoStorefront },
   ];
 
   // Mobile sidebar items (ONLY Profile)

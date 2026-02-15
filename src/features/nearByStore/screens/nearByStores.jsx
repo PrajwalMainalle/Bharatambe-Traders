@@ -1,9 +1,9 @@
 import React from 'react'
 
-function nearByStores() {
+function aboutStore() {
   return (
-    <div>nearByStores</div>
+    <div>aboutStore</div>
   )
 }
 
-export default nearByStores
+export default aboutStore
