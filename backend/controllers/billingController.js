@@ -22,7 +22,7 @@ const getInvoices = async (req, res) => {
 // @route   POST /api/billing
 // @access  Private
 const createInvoice = async (req, res) => {
-  const { customerName, customerPhone, items, discountType, discountValue, discountPercent, paymentMethod, isQuotation } = req.body;
+  const { customerName, customerPhone, items, discountType, discountValue, discountPercent, paymentMethod, isQuotation, isGstBilling } = req.body;
 
   if (!items || items.length === 0) {
     return res.status(400).json({ message: "No items provided in cart" });
@@ -129,6 +129,7 @@ const createInvoice = async (req, res) => {
       paymentMethod: paymentMethod || "Cash",
       status: isQuotation ? "Quotation" : "Paid",
       isQuotation: isQuotation || false,
+      isGstBilling: isGstBilling !== undefined ? isGstBilling : true,
       pdfUrl: relativePdfPath,
     });
 
@@ -249,7 +250,7 @@ const convertQuotationToSale = async (req, res) => {
 // @route   GET /api/billing/:id/pdf
 // @access  Private
 const streamInvoicePDF = async (req, res) => {
-  const { pageSize, orientation } = req.query;
+  const { pageSize, orientation, download } = req.query;
   try {
     const invoice = await Invoice.findOne({ _id: req.params.id, tenantId: req.user._id });
     if (!invoice) {
@@ -258,9 +259,13 @@ const streamInvoicePDF = async (req, res) => {
 
     const tenantUser = await User.findById(req.user._id);
 
-    // Set PDF content headers to render inline in browser
+    // Set PDF content headers to render inline in browser or download as attachment
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename="${invoice.invoiceId}.pdf"`);
+    if (download === "true") {
+      res.setHeader("Content-Disposition", `attachment; filename="${invoice.invoiceId}.pdf"`);
+    } else {
+      res.setHeader("Content-Disposition", `inline; filename="${invoice.invoiceId}.pdf"`);
+    }
 
     // Call PDF generator to pipe directly to response
     await generateInvoicePDF(invoice, tenantUser, res, { pageSize, orientation });

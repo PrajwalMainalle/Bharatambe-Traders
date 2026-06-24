@@ -22,7 +22,7 @@ function POS() {
   // Selectors
   const { products, loading: productsLoading } = useSelector((state) => state.inventory);
   const { cart, customerName, customerPhone, paymentMethod, loading: checkoutLoading } = useSelector((state) => state.billing);
-  const { user } = useSelector((state) => state.auth);
+  const { user, token: authStoreToken } = useSelector((state) => state.auth);
 
   // Local state
   const [searchTerm, setSearchTerm] = useState("");
@@ -38,6 +38,7 @@ function POS() {
   const [isQuotation, setIsQuotation] = useState(false);
   const [pageSize, setPageSize] = useState("auto");
   const [orientation, setOrientation] = useState("portrait");
+  const [isGstBilling, setIsGstBilling] = useState(true);
 
   // Load products on mount
   useEffect(() => {
@@ -76,6 +77,7 @@ function POS() {
   const discountedSubtotal = subtotal - discountAmt;
 
   const calculateGstAmount = () => {
+    if (!isGstBilling) return 0;
     const discountRatio = subtotal > 0 ? discountedSubtotal / subtotal : 1;
     return cart.reduce((sum, item) => {
       const itemSubtotal = item.price * item.qty;
@@ -112,10 +114,16 @@ function POS() {
       return;
     }
 
+    const checkoutItems = cart.map(item => ({
+      ...item,
+      gstRate: isGstBilling ? (item.gstRate || 0) : 0
+    }));
+
     dispatch(checkout({
       discountType,
       discountValue,
       isQuotation,
+      items: checkoutItems,
     })).then((res) => {
       if (!res.error) {
         const savedInvoice = res.payload;
@@ -153,260 +161,54 @@ function POS() {
     });
   };
 
-  // Browser Printing Trigger
+  // Browser Printing Trigger using dynamic PDF streaming (via blob same-origin URL to avoid CORS blocks)
   const triggerPrint = () => {
-    const printContent = document.getElementById("invoice-print-area").innerHTML;
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Invoice ${receiptData?.id}</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
-            
-            body { 
-              font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-              padding: 20px; 
-              color: #1e293b; 
-              font-size: 11px; 
-              line-height: 1.5;
-              background-color: #fff;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
-            .print-receipt {
-              max-width: 480px;
-              margin: 0 auto;
-              border: 3px double #94a3b8;
-              border-top: 10px solid #556b2f;
-              border-radius: 8px;
-              padding: 20px;
-              background-color: #fff;
-              box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            }
-            .text-center { text-align: center; }
-            .text-right { text-align: right; }
-            .bold { font-weight: 700; }
-            .extra-bold { font-weight: 800; }
-            
-            /* Logo & Header */
-            .logo-container {
-              display: flex;
-              justify-content: center;
-              margin-bottom: 8px;
-            }
-            .logo-img {
-              max-height: 40px;
-              width: auto;
-              object-fit: contain;
-            }
-            .shop-header-banner {
-              background-color: #e2ebc8 !important;
-              color: #0f172a !important;
-              padding: 4px 10px;
-              font-size: 9px;
-              font-weight: 700;
-              display: flex;
-              justify-content: space-between;
-              border-top-left-radius: 6px;
-              border-top-right-radius: 6px;
-            }
-            .shop-title-banner {
-              background-color: #6b8e23 !important;
-              color: #ffffff !important;
-              padding: 10px;
-              text-align: center;
-            }
-            .shop-title-text {
-              font-size: 18px;
-              font-weight: 900;
-              margin: 0;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-            }
-            .shop-subtitle-text {
-              font-size: 9.5px;
-              font-weight: 700;
-              letter-spacing: 2px;
-              margin: 2px 0 0 0;
-            }
-            .shop-address-banner {
-              background-color: #e2ebc8 !important;
-              color: #0f172a !important;
-              padding: 8px 12px;
-              text-align: center;
-              font-size: 8.5px;
-              font-weight: 700;
-              border-bottom-left-radius: 6px;
-              border-bottom-right-radius: 6px;
-            }
-            .shop-tagline {
-              font-size: 7.5px;
-              font-weight: normal;
-              margin-top: 4px;
-              color: #374151 !important;
-            }
-            .document-title-container {
-              padding: 12px 0;
-              text-align: center;
-            }
-            .document-title {
-              font-size: 13px;
-              font-weight: 900;
-              text-transform: uppercase;
-              text-decoration: underline;
-              color: #000 !important;
-              letter-spacing: 1px;
-            }
-            
-            /* Borders for receipt data */
-            .details-box {
-              background-color: #fff !important;
-              border: 1px solid #94a3b8 !important;
-              border-radius: 6px;
-              padding: 8px 12px;
-              margin-bottom: 12px;
-            }
-            .details-row {
-              display: flex;
-              justify-content: space-between;
-              margin: 4px 0;
-              font-size: 9.5px;
-              font-weight: 700;
-            }
-            .details-label {
-              color: #64748b;
-              text-transform: uppercase;
-              font-size: 8.5px;
-              font-weight: 600;
-              letter-spacing: 0.3px;
-            }
-            .details-val {
-              color: #334155;
-              font-weight: 600;
-            }
-            .font-mono {
-              font-family: 'JetBrains Mono', 'Courier New', monospace;
-            }
-            
-            /* Bordered Table Grid */
-            .receipt-table-container {
-              border: 1px solid #94a3b8 !important;
-              border-radius: 6px;
-              overflow: hidden;
-            }
-            .receipt-table {
-              width: 100%;
-              border-collapse: collapse;
-            }
-            .receipt-table th {
-              background-color: #0f172a !important;
-              color: #ffffff !important;
-              font-weight: 700;
-              font-size: 8.5px;
-              text-transform: uppercase;
-              padding: 6px 8px;
-              border-bottom: 1px solid #94a3b8 !important;
-              border-right: 1px solid #94a3b8 !important;
-            }
-            .receipt-table th:last-child {
-              border-right: none !important;
-            }
-            .receipt-table td {
-              padding: 6px 8px;
-              font-size: 9.5px;
-              border-bottom: 1px solid #e2e8f0 !important;
-              border-right: 1px solid #94a3b8 !important;
-              color: #1e293b !important;
-            }
-            .receipt-table td:last-child {
-              border-right: none !important;
-            }
-            .receipt-table tr:last-child td {
-              border-bottom: none !important;
-            }
-            
-            /* Calculations inner table */
-            .inner-calc-table {
-              width: 100%;
-              border-collapse: collapse;
-            }
-            .inner-calc-table td {
-              padding: 4px 8px !important;
-              border: none !important;
-              font-size: 9px !important;
-            }
-            .inner-calc-table tr:not(:last-child) td {
-              border-bottom: 1px solid #e2e8f0 !important;
-            }
-            
-            /* Footer & Signatures */
-            .footer-sig-container {
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-end;
-              margin-top: 20px;
-              padding: 0 8px;
-            }
-            .footer-thankyou {
-              font-weight: 700;
-              font-style: italic;
-              font-size: 9.5px;
-              color: #0f172a !important;
-            }
-            .sig-block {
-              text-align: right;
-              width: 140px;
-            }
-            .sig-line {
-              border-bottom: 1px solid #94a3b8 !important;
-              margin-bottom: 4px;
-            }
-            .sig-text {
-              font-size: 8.5px;
-              font-weight: 700;
-              text-transform: uppercase;
-              color: #475569 !important;
-            }
+    const pdfUrl = getDynamicPdfUrl();
+    if (!pdfUrl) return;
 
-            .divider-dashed {
-              border-bottom: 1px dashed #cbd5e1;
-              margin: 12px 0;
-            }
-            .divider-solid {
-              border-bottom: 1px solid #e2e8f0;
-              margin: 12px 0;
-            }
-            
-            @page {
-              size: auto;
-              margin: 10mm;
-            }
-            @media print {
-              body { padding: 0; }
-              .no-print { display: none; }
-            }
-          </style>
-        </head>
-        <body onload="window.print(); window.close();">
-          <div class="print-receipt">
-            ${printContent}
-          </div>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    fetch(pdfUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res.blob();
+      })
+      .then((blob) => {
+        const blobUrl = URL.createObjectURL(blob);
+        let iframe = document.getElementById("print-iframe");
+        if (!iframe) {
+          iframe = document.createElement("iframe");
+          iframe.id = "print-iframe";
+          iframe.style.position = "fixed";
+          iframe.style.right = "0";
+          iframe.style.bottom = "0";
+          iframe.style.width = "0";
+          iframe.style.height = "0";
+          iframe.style.border = "0";
+          document.body.appendChild(iframe);
+        }
+        iframe.src = blobUrl;
+        iframe.onload = () => {
+          setTimeout(() => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          }, 200);
+        };
+      })
+      .catch((err) => {
+        console.error("Print fetch failed, opening in new tab instead:", err);
+        window.open(pdfUrl, "_blank");
+      });
   };
 
   const getDynamicPdfUrl = () => {
     if (!receiptData?._id) return "";
     const serverUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace("/api", "") : "http://localhost:5000";
-    const token = user?.token || "";
+    const token = authStoreToken || user?.token || "";
     return `${serverUrl}/api/billing/${receiptData._id}/pdf?pageSize=${pageSize}&orientation=${orientation}&token=${token}&t=${Date.now()}`;
   };
 
   const getPdfDownloadLink = () => {
-    return getDynamicPdfUrl();
+    const url = getDynamicPdfUrl();
+    return url ? `${url}&download=true` : "";
   };
 
   const profile = user?.profile || {};
@@ -729,6 +531,21 @@ function POS() {
               );
             })}
           </div>
+        </div>
+
+        {/* Quotation / Estimate Toggle */}
+        {/* GST Billing Toggle */}
+        <div className="flex items-center gap-2.5 py-1 select-none">
+          <input
+            type="checkbox"
+            id="isGstBilling"
+            checked={isGstBilling}
+            onChange={(e) => setIsGstBilling(e.target.checked)}
+            className="w-4 h-4 rounded text-orange-500 bg-slate-950 border-slate-800 focus:ring-orange-500 focus:ring-2 cursor-pointer"
+          />
+          <label htmlFor="isGstBilling" className="text-xs font-semibold text-slate-350 cursor-pointer">
+            Enable GST Calculation (CGST/SGST)
+          </label>
         </div>
 
         {/* Quotation / Estimate Toggle */}

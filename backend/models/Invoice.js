@@ -91,6 +91,10 @@ const InvoiceSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isGstBilling: {
+      type: Boolean,
+      default: true,
+    },
     pdfUrl: {
       type: String,
       default: "",

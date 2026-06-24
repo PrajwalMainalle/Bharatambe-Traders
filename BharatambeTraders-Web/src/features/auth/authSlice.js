@@ -84,7 +84,7 @@ export const updateProfile = createAsyncThunk(
       const updatedUser = { ...data, token };
       localStorage.setItem("bt_user", JSON.stringify(updatedUser));
       
-      return data;
+      return updatedUser;
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to update profile"

@@ -3,12 +3,21 @@ const fs = require("fs");
 const path = require("path");
 
 const drawPageDecorations = (doc, pageNum) => {
-  // Olive green outline border
-  doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40).lineWidth(1.5).stroke("#6b8e23");
+  // Save bottom margin to prevent auto page break
+  const oldBottomMargin = doc.page.margins.bottom;
+  doc.page.margins.bottom = 0;
+
+  // Double outline border design (olive green)
+  doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40).lineWidth(1).stroke("#6b8e23");
+  doc.rect(23, 23, doc.page.width - 46, doc.page.height - 46).lineWidth(0.5).stroke("#6b8e23");
   
   // Simple footer page numbering
-  doc.fillColor("#64748b").font("Helvetica").fontSize(7.5);
+  const fontRegular = doc.customFontRegular || "Helvetica";
+  doc.fillColor("#64748b").font(fontRegular).fontSize(7.5);
   doc.text(`Page ${pageNum}`, 35, doc.page.height - 32, { align: "right", width: doc.page.width - 70 });
+
+  // Restore bottom margin
+  doc.page.margins.bottom = oldBottomMargin;
 };
 
 const drawPageHeader = (doc, invoice, tenant, pageNum) => {
@@ -27,14 +36,19 @@ const drawPageHeader = (doc, invoice, tenant, pageNum) => {
   const bannerLightBg = "#e2ebc8"; // Light Olive Green
   const borderColor = "#94a3b8";
 
+  const fontRegular = doc.customFontRegular || "Helvetica";
+  const fontBold = doc.customFontBold || "Helvetica-Bold";
+
   // Outline decorations
   drawPageDecorations(doc, pageNum);
 
   if (pageNum === 1) {
     // 1. Light-green top banner
     doc.rect(margin, margin, printWidth, 20).fill(bannerLightBg);
-    doc.fillColor(primaryColor).font("Helvetica-Bold").fontSize(8.5);
-    doc.text(`.REG.GSTIN-${gstNumber}`, margin + 8, margin + 6);
+    doc.fillColor(primaryColor).font(fontBold).fontSize(8.5);
+    if (invoice.isGstBilling !== false) {
+      doc.text(`.REG.GSTIN-${gstNumber}`, margin + 8, margin + 6);
+    }
     doc.text(`MOBILE: ${phone}`, margin + printWidth - 140, margin + 6, { align: "right", width: 130 });
 
     // 2. Centered logo (if exists) & Olive green branding block banner
@@ -65,27 +79,27 @@ const drawPageHeader = (doc, invoice, tenant, pageNum) => {
     }
 
     doc.rect(margin, textStartY, printWidth, 40).fill(bannerBg);
-    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(18).text(shopName.toUpperCase(), margin, textStartY + 6, { align: "center", width: printWidth });
+    doc.fillColor("#ffffff").font(fontBold).fontSize(18).text(shopName.toUpperCase(), margin, textStartY + 6, { align: "center", width: printWidth });
     doc.fontSize(9.5).text("WHOLE SALER'S", margin, textStartY + 26, { align: "center", width: printWidth });
 
     // 3. Light green address and tagline block
     doc.rect(margin, textStartY + 40, printWidth, 40).fill(bannerLightBg);
-    doc.fillColor(primaryColor).font("Helvetica-Bold").fontSize(8).text(address.toUpperCase(), margin + 10, textStartY + 46, { align: "center", width: printWidth - 20 });
+    doc.fillColor(primaryColor).font(fontBold).fontSize(8).text(address.toUpperCase(), margin + 10, textStartY + 46, { align: "center", width: printWidth - 20 });
     
     const tagText = profile.businessDescription || "OFFICE STATIONARY, SCHOOL ITEMS, ALL NOTE BOOKS, ZEROX PAPERS, SPORTS ITMES, COMPUTERS MATERIALS AND OTHERS MATERIALS";
-    doc.font("Helvetica").fontSize(7.5).text(tagText.toUpperCase(), margin + 10, textStartY + 60, { align: "center", width: printWidth - 20 });
+    doc.font(fontRegular).fontSize(7.5).text(tagText.toUpperCase(), margin + 10, textStartY + 60, { align: "center", width: printWidth - 20 });
 
     // 4. Centered Title
     const titleY = textStartY + 95;
     const titleText = invoice.isQuotation ? "ESTIMATE / QUOTATION" : "CREDIT BILL";
-    doc.fillColor(primaryColor).font("Helvetica-Bold").fontSize(13).text(titleText, margin, titleY, { align: "center", width: printWidth });
+    doc.fillColor(primaryColor).font(fontBold).fontSize(13).text(titleText, margin, titleY, { align: "center", width: printWidth });
     
     const textWidth = doc.widthOfString(titleText);
     doc.moveTo((pageWidth - textWidth) / 2, titleY + 14).lineTo((pageWidth + textWidth) / 2, titleY + 14).stroke(primaryColor);
 
     // 5. Metadata fields
     const metaY = titleY + 25;
-    doc.font("Helvetica-Bold").fontSize(9.5);
+    doc.font(fontBold).fontSize(9.5);
     doc.text(`NO: ${invoice.invoiceId}`, margin + 5, metaY);
     doc.text(`DATE: ${new Date(invoice.date).toLocaleDateString("en-IN")}`, margin + printWidth - 150, metaY, { align: "right", width: 145 });
 
@@ -99,13 +113,13 @@ const drawPageHeader = (doc, invoice, tenant, pageNum) => {
     return metaY + 36;
   } else {
     // Page 2+ compact header
-    doc.fillColor(primaryColor).font("Helvetica-Bold").fontSize(10);
+    doc.fillColor(primaryColor).font(fontBold).fontSize(10);
     doc.text(shopName.toUpperCase(), margin + 5, margin + 5);
     
     const titleText = invoice.isQuotation ? `ESTIMATE / QUOTATION (Page ${pageNum})` : `CREDIT BILL (Page ${pageNum})`;
     doc.text(titleText, margin + printWidth - 200, margin + 5, { align: "right", width: 195 });
     
-    doc.fontSize(8.5).font("Helvetica");
+    doc.fontSize(8.5).font(fontRegular);
     doc.text(`Invoice NO: ${invoice.invoiceId}`, margin + 5, margin + 18);
     
     doc.moveTo(margin, margin + 30).lineTo(pageWidth - margin, margin + 30).stroke(borderColor);
@@ -126,11 +140,13 @@ const drawTableHeaders = (doc, startY) => {
   const col4X = margin + Math.round(printWidth * 0.70);
   const col5X = margin + Math.round(printWidth * 0.82);
 
+  const fontBold = doc.customFontBold || "Helvetica-Bold";
+
   // Draw header box border
   doc.rect(margin, startY, printWidth, 20).stroke(borderColor);
   
   // Draw header text
-  doc.fillColor("#000000").font("Helvetica-Bold").fontSize(8.5);
+  doc.fillColor("#000000").font(fontBold).fontSize(8.5);
   doc.text("S.No", col1X + 5, startY + 6, { width: col2X - col1X - 10, align: "center" });
   doc.text("PARTICULARS", col2X + 8, startY + 6);
   doc.text("QTY", col3X + 2, startY + 6, { width: col4X - col3X - 4, align: "center" });
@@ -161,6 +177,25 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
       }
 
       const doc = new PDFDocument({ size: size, layout: layout, margin: 40 });
+
+      // Font Registration for Indic (Kannada, Hindi, English) Scripts
+      const fontPath = "C:\\Windows\\Fonts\\Nirmala.ttc";
+      let hasNirmala = false;
+      try {
+        if (fs.existsSync(fontPath)) {
+          doc.registerFont("Nirmala", fontPath, "NirmalaUI");
+          doc.registerFont("Nirmala-Bold", fontPath, "NirmalaUI-Bold");
+          hasNirmala = true;
+        }
+      } catch (fontErr) {
+        console.error("Failed to register Nirmala font in PDFGenerator:", fontErr);
+      }
+
+      doc.customFontRegular = hasNirmala ? "Nirmala" : "Helvetica";
+      doc.customFontBold = hasNirmala ? "Nirmala-Bold" : "Helvetica-Bold";
+
+      const fontRegular = doc.customFontRegular;
+      const fontBold = doc.customFontBold;
       
       let stream;
       if (typeof target === "string") {
@@ -209,14 +244,18 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
         }
 
         // Draw text
-        doc.fillColor("#1e293b").font("Helvetica").fontSize(8.5);
+        doc.fillColor("#1e293b").font(fontRegular).fontSize(8.5);
         doc.text(String(idx + 1), col1X, currentY + 6, { width: col2X - col1X, align: "center" });
-        doc.text(item.name.toUpperCase(), col2X + 8, currentY + 6, { width: col3X - col2X - 16, height: 12, ellipsis: true });
+        
+        // Render item name (no toUpperCase to preserve exact case as stored in inventory)
+        const displayItemName = item.name;
+        doc.text(displayItemName, col2X + 8, currentY + 6, { width: col3X - col2X - 16, height: 12, ellipsis: true });
+        
         doc.text(String(item.qty), col3X, currentY + 6, { width: col4X - col3X, align: "center" });
         doc.text(`₹${item.price.toFixed(2)}`, col4X, currentY + 6, { width: col5X - col4X - 5, align: "right" });
         
         const lineTotal = item.price * item.qty;
-        doc.font("Helvetica-Bold").text(`₹${lineTotal.toFixed(2)}`, col5X, currentY + 6, { width: col6X - col5X - 5, align: "right" });
+        doc.font(fontBold).text(`₹${lineTotal.toFixed(2)}`, col5X, currentY + 6, { width: col6X - col5X - 5, align: "right" });
 
         // Draw row borders
         doc.rect(margin, currentY, printWidth, rowHeight).stroke(borderColor);
@@ -245,9 +284,10 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
       // 1. Draw outer summary box
       doc.rect(margin, currentY, printWidth, summaryHeight).stroke(borderColor);
       
-      // Horizontal dividers
+      // Horizontal dividers (starts from margin for first row divider, and col3X for inner details rows to keep bank details background plain)
       for (let i = 1; i < numSummaryRows; i++) {
-        doc.moveTo(margin, currentY + i * 20).lineTo(pageWidth - margin, currentY + i * 20).stroke(borderColor);
+        const startX = i === 1 ? margin : col3X;
+        doc.moveTo(startX, currentY + i * 20).lineTo(pageWidth - margin, currentY + i * 20).stroke(borderColor);
       }
 
       // Row 1: TOTAL columns
@@ -256,7 +296,7 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
       doc.moveTo(col4X, currentY).lineTo(col4X, currentY + 20).stroke(borderColor);
       doc.moveTo(col5X, currentY).lineTo(col5X, currentY + 20).stroke(borderColor);
 
-      doc.fillColor("#000000").font("Helvetica-Bold").fontSize(8.5);
+      doc.fillColor("#000000").font(fontBold).fontSize(8.5);
       doc.text("TOTAL", col1X, currentY + 5, { width: col3X - col1X, align: "center" });
 
       const totalQty = invoice.items.reduce((sum, item) => sum + item.qty, 0);
@@ -264,50 +304,51 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
       doc.text(`₹${invoice.subtotal.toFixed(2)}`, col5X, currentY + 5, { width: col6X - col5X - 5, align: "right" });
 
       // Rows 2+: Bank Details (left merged) vs Calculations (right)
+      doc.moveTo(col3X, currentY + 20).lineTo(col3X, currentY + summaryHeight).stroke(borderColor);
       doc.moveTo(col5X, currentY + 20).lineTo(col5X, currentY + summaryHeight).stroke(borderColor);
 
       const bankDetailsY = currentY + 25;
-      doc.fillColor("#b91c1c").font("Helvetica-Bold").fontSize(8);
+      doc.fillColor("#b91c1c").font(fontBold).fontSize(8);
       doc.text("BANK ACCOUNT DETAILS:", margin + 8, bankDetailsY);
       
-      doc.fillColor("#0f172a").font("Helvetica").fontSize(7.5);
+      doc.fillColor("#0f172a").font(fontRegular).fontSize(7.5);
       const profile = tenant.profile || {};
-      const shopName = (profile.shopName || tenant.businessName || "SmartLedger").toUpperCase();
-      doc.text(`Account Name:  ${shopName}`, margin + 8, bankDetailsY + 11);
-      doc.text("Bank Name:      CANARA BANK, BASAVAKALYAN BRANCH", margin + 8, bankDetailsY + 20);
-      doc.text("A/C Number:     120033287950  |  IFSC Code: CNRB0010700", margin + 8, bankDetailsY + 29);
+      const shopNameStr = (profile.shopName || tenant.businessName || "SmartLedger").toUpperCase();
+      doc.text(`Account Name:  ${shopNameStr}`, margin + 8, bankDetailsY + 11, { width: col3X - margin - 16 });
+      doc.text("Bank Name:      CANARA BANK, BASAVAKALYAN BRANCH", margin + 8, bankDetailsY + 20, { width: col3X - margin - 16 });
+      doc.text("A/C Number:     120033287950  |  IFSC Code: CNRB0010700", margin + 8, bankDetailsY + 29, { width: col3X - margin - 16 });
 
       // Calculations right column
       let calcY = currentY + 20;
 
       if (discountAmount > 0) {
-        doc.fillColor("#000000").font("Helvetica-Bold").fontSize(7.5);
-        doc.text("DISCOUNT", col4X, calcY + 5, { width: col5X - col4X - 5, align: "right" });
-        doc.font("Helvetica").text(`-₹${discountAmount.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
+        doc.fillColor("#000000").font(fontBold).fontSize(7.5);
+        doc.text("DISCOUNT", col3X, calcY + 5, { width: col5X - col3X - 5, align: "right" });
+        doc.font(fontRegular).text(`-₹${discountAmount.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
         calcY += 20;
       }
 
       const sgstAmt = invoice.gstAmount / 2;
-      doc.fillColor("#000000").font("Helvetica-Bold").fontSize(7.5);
-      doc.text("SGST (State Tax)", col4X, calcY + 5, { width: col5X - col4X - 5, align: "right" });
-      doc.font("Helvetica").text(`₹${sgstAmt.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
+      doc.fillColor("#000000").font(fontBold).fontSize(7.5);
+      doc.text("SGST (State Tax)", col3X, calcY + 5, { width: col5X - col3X - 5, align: "right" });
+      doc.font(fontRegular).text(`₹${sgstAmt.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
       calcY += 20;
 
-      doc.font("Helvetica-Bold").text("CGST (Central Tax)", col4X, calcY + 5, { width: col5X - col4X - 5, align: "right" });
-      doc.font("Helvetica").text(`₹${sgstAmt.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
+      doc.font(fontBold).text("CGST (Central Tax)", col3X, calcY + 5, { width: col5X - col3X - 5, align: "right" });
+      doc.font(fontRegular).text(`₹${sgstAmt.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
       calcY += 20;
 
       const grandTotalLabel = invoice.isQuotation ? "ESTIMATED TOTAL" : "GRAND TOTAL";
-      doc.font("Helvetica-Bold").fontSize(9.5).fillColor("#f97316");
-      doc.text(grandTotalLabel, col4X, calcY + 5, { width: col5X - col4X - 5, align: "right" });
+      doc.font(fontBold).fontSize(9.5).fillColor("#f97316");
+      doc.text(grandTotalLabel, col3X, calcY + 5, { width: col5X - col3X - 5, align: "right" });
       doc.text(`₹${invoice.total.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
 
       // Signatures row
       const footerY = currentY + summaryHeight + 20;
-      doc.fillColor("#0f172a").font("Helvetica-Oblique").fontSize(9);
+      doc.fillColor("#0f172a").font(fontRegular).fontSize(9);
       doc.text("Thanku visit again", margin + 10, footerY + 20);
       
-      doc.font("Helvetica-Bold").fontSize(9);
+      doc.font(fontBold).fontSize(9);
       doc.text("Authorized signature", col5X - 40, footerY + 20, { align: "right", width: col6X - col5X + 40 });
       doc.moveTo(col5X - 20, footerY + 14).lineTo(col6X, footerY + 14).stroke(borderColor);
 
