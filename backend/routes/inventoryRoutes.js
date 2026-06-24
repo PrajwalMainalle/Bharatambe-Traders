@@ -1,0 +1,18 @@
+const express = require("express");
+const router = express.Router();
+const {
+  getProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+} = require("../controllers/inventoryController");
+const { protect } = require("../middleware/authMiddleware");
+
+router.use(protect); // protect all inventory endpoints
+
+router.get("/", getProducts);
+router.post("/", createProduct);
+router.put("/:id", updateProduct);
+router.delete("/:id", deleteProduct);
+
+module.exports = router;

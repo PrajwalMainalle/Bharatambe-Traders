@@ -1,0 +1,333 @@
+const PDFDocument = require("pdfkit");
+const fs = require("fs");
+const path = require("path");
+
+const drawPageDecorations = (doc, pageNum) => {
+  // Olive green outline border
+  doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40).lineWidth(1.5).stroke("#6b8e23");
+  
+  // Simple footer page numbering
+  doc.fillColor("#64748b").font("Helvetica").fontSize(7.5);
+  doc.text(`Page ${pageNum}`, 35, doc.page.height - 32, { align: "right", width: doc.page.width - 70 });
+};
+
+const drawPageHeader = (doc, invoice, tenant, pageNum) => {
+  const margin = 40;
+  const pageWidth = doc.page.width;
+  const printWidth = pageWidth - 2 * margin;
+  
+  const profile = tenant.profile || {};
+  const shopName = profile.shopName || tenant.businessName || "SmartLedger";
+  const address = profile.businessAddress || "N/A Address";
+  const phone = profile.mobileNumber || tenant.mobileNumber || "9845757296";
+  const gstNumber = profile.gstNumber || "29ANOPM8542Q1ZU";
+  
+  const primaryColor = "#0f172a";
+  const bannerBg = "#6b8e23"; // Olive Green
+  const bannerLightBg = "#e2ebc8"; // Light Olive Green
+  const borderColor = "#94a3b8";
+
+  // Outline decorations
+  drawPageDecorations(doc, pageNum);
+
+  if (pageNum === 1) {
+    // 1. Light-green top banner
+    doc.rect(margin, margin, printWidth, 20).fill(bannerLightBg);
+    doc.fillColor(primaryColor).font("Helvetica-Bold").fontSize(8.5);
+    doc.text(`.REG.GSTIN-${gstNumber}`, margin + 8, margin + 6);
+    doc.text(`MOBILE: ${phone}`, margin + printWidth - 140, margin + 6, { align: "right", width: 130 });
+
+    // 2. Centered logo (if exists) & Olive green branding block banner
+    let textStartY = margin + 20;
+    let logoDrawn = false;
+
+    if (profile.logo && profile.logo.startsWith("data:image")) {
+      try {
+        const base64Data = profile.logo.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(base64Data, "base64");
+        doc.image(buffer, (pageWidth - 40) / 2, margin + 25, { width: 40, height: 40 });
+        logoDrawn = true;
+        textStartY += 48;
+      } catch (e) {
+        console.error("Failed to draw logo inside PDF:", e.message);
+      }
+    } else {
+      try {
+        const defaultLogoPath = path.join(__dirname, "..", "assets", "SLLogo.png");
+        if (fs.existsSync(defaultLogoPath)) {
+          doc.image(defaultLogoPath, (pageWidth - 40) / 2, margin + 25, { width: 40, height: 40 });
+          logoDrawn = true;
+          textStartY += 48;
+        }
+      } catch (e) {
+        // Silent fail
+      }
+    }
+
+    doc.rect(margin, textStartY, printWidth, 40).fill(bannerBg);
+    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(18).text(shopName.toUpperCase(), margin, textStartY + 6, { align: "center", width: printWidth });
+    doc.fontSize(9.5).text("WHOLE SALER'S", margin, textStartY + 26, { align: "center", width: printWidth });
+
+    // 3. Light green address and tagline block
+    doc.rect(margin, textStartY + 40, printWidth, 40).fill(bannerLightBg);
+    doc.fillColor(primaryColor).font("Helvetica-Bold").fontSize(8).text(address.toUpperCase(), margin + 10, textStartY + 46, { align: "center", width: printWidth - 20 });
+    
+    const tagText = profile.businessDescription || "OFFICE STATIONARY, SCHOOL ITEMS, ALL NOTE BOOKS, ZEROX PAPERS, SPORTS ITMES, COMPUTERS MATERIALS AND OTHERS MATERIALS";
+    doc.font("Helvetica").fontSize(7.5).text(tagText.toUpperCase(), margin + 10, textStartY + 60, { align: "center", width: printWidth - 20 });
+
+    // 4. Centered Title
+    const titleY = textStartY + 95;
+    const titleText = invoice.isQuotation ? "ESTIMATE / QUOTATION" : "CREDIT BILL";
+    doc.fillColor(primaryColor).font("Helvetica-Bold").fontSize(13).text(titleText, margin, titleY, { align: "center", width: printWidth });
+    
+    const textWidth = doc.widthOfString(titleText);
+    doc.moveTo((pageWidth - textWidth) / 2, titleY + 14).lineTo((pageWidth + textWidth) / 2, titleY + 14).stroke(primaryColor);
+
+    // 5. Metadata fields
+    const metaY = titleY + 25;
+    doc.font("Helvetica-Bold").fontSize(9.5);
+    doc.text(`NO: ${invoice.invoiceId}`, margin + 5, metaY);
+    doc.text(`DATE: ${new Date(invoice.date).toLocaleDateString("en-IN")}`, margin + printWidth - 150, metaY, { align: "right", width: 145 });
+
+    doc.text(`NAME: ${invoice.customerName.toUpperCase()}`, margin + 5, metaY + 15);
+    if (invoice.customerPhone && invoice.customerPhone !== "N/A") {
+      doc.text(`PHONE: ${invoice.customerPhone}`, margin + printWidth - 150, metaY + 15, { align: "right", width: 145 });
+    }
+
+    doc.moveTo(margin, metaY + 30).lineTo(pageWidth - margin, metaY + 30).stroke(borderColor);
+    
+    return metaY + 36;
+  } else {
+    // Page 2+ compact header
+    doc.fillColor(primaryColor).font("Helvetica-Bold").fontSize(10);
+    doc.text(shopName.toUpperCase(), margin + 5, margin + 5);
+    
+    const titleText = invoice.isQuotation ? `ESTIMATE / QUOTATION (Page ${pageNum})` : `CREDIT BILL (Page ${pageNum})`;
+    doc.text(titleText, margin + printWidth - 200, margin + 5, { align: "right", width: 195 });
+    
+    doc.fontSize(8.5).font("Helvetica");
+    doc.text(`Invoice NO: ${invoice.invoiceId}`, margin + 5, margin + 18);
+    
+    doc.moveTo(margin, margin + 30).lineTo(pageWidth - margin, margin + 30).stroke(borderColor);
+    
+    return margin + 35;
+  }
+};
+
+const drawTableHeaders = (doc, startY) => {
+  const margin = 40;
+  const pageWidth = doc.page.width;
+  const printWidth = pageWidth - 2 * margin;
+  const borderColor = "#94a3b8";
+  
+  const col1X = margin;
+  const col2X = margin + 35;
+  const col3X = margin + Math.round(printWidth * 0.60);
+  const col4X = margin + Math.round(printWidth * 0.70);
+  const col5X = margin + Math.round(printWidth * 0.82);
+
+  // Draw header box border
+  doc.rect(margin, startY, printWidth, 20).stroke(borderColor);
+  
+  // Draw header text
+  doc.fillColor("#000000").font("Helvetica-Bold").fontSize(8.5);
+  doc.text("S.No", col1X + 5, startY + 6, { width: col2X - col1X - 10, align: "center" });
+  doc.text("PARTICULARS", col2X + 8, startY + 6);
+  doc.text("QTY", col3X + 2, startY + 6, { width: col4X - col3X - 4, align: "center" });
+  doc.text("RATE", col4X + 2, startY + 6, { width: col5X - col4X - 4, align: "right" });
+  doc.text("AMOUNT", col5X + 2, startY + 6, { width: (pageWidth - margin) - col5X - 4, align: "right" });
+
+  // Draw vertical header lines
+  doc.moveTo(col2X, startY).lineTo(col2X, startY + 20).stroke(borderColor);
+  doc.moveTo(col3X, startY).lineTo(col3X, startY + 20).stroke(borderColor);
+  doc.moveTo(col4X, startY).lineTo(col4X, startY + 20).stroke(borderColor);
+  doc.moveTo(col5X, startY).lineTo(col5X, startY + 20).stroke(borderColor);
+};
+
+const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Determine page size and orientation
+      let size = "A4";
+      let layout = options.orientation || "portrait";
+      
+      if (options.pageSize === "A3") {
+        size = "A3";
+      } else if (options.pageSize === "A4") {
+        size = "A4";
+      } else if (options.pageSize === "auto") {
+        // Auto sizing logic: If invoice has more than 12 items, default to A4, multi-page is handled dynamically.
+        size = "A4";
+      }
+
+      const doc = new PDFDocument({ size: size, layout: layout, margin: 40 });
+      
+      let stream;
+      if (typeof target === "string") {
+        const dir = path.dirname(target);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        stream = fs.createWriteStream(target);
+      } else {
+        stream = target;
+      }
+      
+      doc.pipe(stream);
+
+      const margin = 40;
+      const pageWidth = doc.page.width;
+      const pageHeight = doc.page.height;
+      const printWidth = pageWidth - 2 * margin;
+      const borderColor = "#94a3b8";
+
+      const col1X = margin;
+      const col2X = margin + 35;
+      const col3X = margin + Math.round(printWidth * 0.60);
+      const col4X = margin + Math.round(printWidth * 0.70);
+      const col5X = margin + Math.round(printWidth * 0.82);
+      const col6X = pageWidth - margin;
+
+      let pageNum = 1;
+      let startY = drawPageHeader(doc, invoice, tenant, pageNum);
+      drawTableHeaders(doc, startY);
+      
+      let currentY = startY + 20;
+      const rowHeight = 22;
+
+      invoice.items.forEach((item, idx) => {
+        // Check for row overflow (leaving room at bottom)
+        if (currentY + rowHeight > pageHeight - 120) {
+          doc.moveTo(margin, currentY).lineTo(pageWidth - margin, currentY).stroke(borderColor);
+          
+          doc.addPage();
+          pageNum++;
+          
+          startY = drawPageHeader(doc, invoice, tenant, pageNum);
+          drawTableHeaders(doc, startY);
+          currentY = startY + 20;
+        }
+
+        // Draw text
+        doc.fillColor("#1e293b").font("Helvetica").fontSize(8.5);
+        doc.text(String(idx + 1), col1X, currentY + 6, { width: col2X - col1X, align: "center" });
+        doc.text(item.name.toUpperCase(), col2X + 8, currentY + 6, { width: col3X - col2X - 16, height: 12, ellipsis: true });
+        doc.text(String(item.qty), col3X, currentY + 6, { width: col4X - col3X, align: "center" });
+        doc.text(`₹${item.price.toFixed(2)}`, col4X, currentY + 6, { width: col5X - col4X - 5, align: "right" });
+        
+        const lineTotal = item.price * item.qty;
+        doc.font("Helvetica-Bold").text(`₹${lineTotal.toFixed(2)}`, col5X, currentY + 6, { width: col6X - col5X - 5, align: "right" });
+
+        // Draw row borders
+        doc.rect(margin, currentY, printWidth, rowHeight).stroke(borderColor);
+        doc.moveTo(col2X, currentY).lineTo(col2X, currentY + rowHeight).stroke(borderColor);
+        doc.moveTo(col3X, currentY).lineTo(col3X, currentY + rowHeight).stroke(borderColor);
+        doc.moveTo(col4X, currentY).lineTo(col4X, currentY + rowHeight).stroke(borderColor);
+        doc.moveTo(col5X, currentY).lineTo(col5X, currentY + rowHeight).stroke(borderColor);
+
+        currentY += rowHeight;
+      });
+
+      // summary parameters
+      const discountAmount = invoice.discountAmount || 0;
+      const numSummaryRows = discountAmount > 0 ? 5 : 4;
+      const summaryHeight = numSummaryRows * 20;
+
+      // Check if we need another page for the summary rows + signature block
+      if (currentY + summaryHeight + 80 > pageHeight - 40) {
+        doc.addPage();
+        pageNum++;
+        startY = drawPageHeader(doc, invoice, tenant, pageNum);
+        drawTableHeaders(doc, startY);
+        currentY = startY + 20;
+      }
+
+      // 1. Draw outer summary box
+      doc.rect(margin, currentY, printWidth, summaryHeight).stroke(borderColor);
+      
+      // Horizontal dividers
+      for (let i = 1; i < numSummaryRows; i++) {
+        doc.moveTo(margin, currentY + i * 20).lineTo(pageWidth - margin, currentY + i * 20).stroke(borderColor);
+      }
+
+      // Row 1: TOTAL columns
+      doc.moveTo(col2X, currentY).lineTo(col2X, currentY + 20).stroke(borderColor);
+      doc.moveTo(col3X, currentY).lineTo(col3X, currentY + 20).stroke(borderColor);
+      doc.moveTo(col4X, currentY).lineTo(col4X, currentY + 20).stroke(borderColor);
+      doc.moveTo(col5X, currentY).lineTo(col5X, currentY + 20).stroke(borderColor);
+
+      doc.fillColor("#000000").font("Helvetica-Bold").fontSize(8.5);
+      doc.text("TOTAL", col1X, currentY + 5, { width: col3X - col1X, align: "center" });
+
+      const totalQty = invoice.items.reduce((sum, item) => sum + item.qty, 0);
+      doc.text(String(totalQty), col3X, currentY + 5, { width: col4X - col3X, align: "center" });
+      doc.text(`₹${invoice.subtotal.toFixed(2)}`, col5X, currentY + 5, { width: col6X - col5X - 5, align: "right" });
+
+      // Rows 2+: Bank Details (left merged) vs Calculations (right)
+      doc.moveTo(col5X, currentY + 20).lineTo(col5X, currentY + summaryHeight).stroke(borderColor);
+
+      const bankDetailsY = currentY + 25;
+      doc.fillColor("#b91c1c").font("Helvetica-Bold").fontSize(8);
+      doc.text("BANK ACCOUNT DETAILS:", margin + 8, bankDetailsY);
+      
+      doc.fillColor("#0f172a").font("Helvetica").fontSize(7.5);
+      const profile = tenant.profile || {};
+      const shopName = (profile.shopName || tenant.businessName || "SmartLedger").toUpperCase();
+      doc.text(`Account Name:  ${shopName}`, margin + 8, bankDetailsY + 11);
+      doc.text("Bank Name:      CANARA BANK, BASAVAKALYAN BRANCH", margin + 8, bankDetailsY + 20);
+      doc.text("A/C Number:     120033287950  |  IFSC Code: CNRB0010700", margin + 8, bankDetailsY + 29);
+
+      // Calculations right column
+      let calcY = currentY + 20;
+
+      if (discountAmount > 0) {
+        doc.fillColor("#000000").font("Helvetica-Bold").fontSize(7.5);
+        doc.text("DISCOUNT", col4X, calcY + 5, { width: col5X - col4X - 5, align: "right" });
+        doc.font("Helvetica").text(`-₹${discountAmount.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
+        calcY += 20;
+      }
+
+      const sgstAmt = invoice.gstAmount / 2;
+      doc.fillColor("#000000").font("Helvetica-Bold").fontSize(7.5);
+      doc.text("SGST (State Tax)", col4X, calcY + 5, { width: col5X - col4X - 5, align: "right" });
+      doc.font("Helvetica").text(`₹${sgstAmt.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
+      calcY += 20;
+
+      doc.font("Helvetica-Bold").text("CGST (Central Tax)", col4X, calcY + 5, { width: col5X - col4X - 5, align: "right" });
+      doc.font("Helvetica").text(`₹${sgstAmt.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
+      calcY += 20;
+
+      const grandTotalLabel = invoice.isQuotation ? "ESTIMATED TOTAL" : "GRAND TOTAL";
+      doc.font("Helvetica-Bold").fontSize(9.5).fillColor("#f97316");
+      doc.text(grandTotalLabel, col4X, calcY + 5, { width: col5X - col4X - 5, align: "right" });
+      doc.text(`₹${invoice.total.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
+
+      // Signatures row
+      const footerY = currentY + summaryHeight + 20;
+      doc.fillColor("#0f172a").font("Helvetica-Oblique").fontSize(9);
+      doc.text("Thanku visit again", margin + 10, footerY + 20);
+      
+      doc.font("Helvetica-Bold").fontSize(9);
+      doc.text("Authorized signature", col5X - 40, footerY + 20, { align: "right", width: col6X - col5X + 40 });
+      doc.moveTo(col5X - 20, footerY + 14).lineTo(col6X, footerY + 14).stroke(borderColor);
+
+      doc.end();
+
+      if (typeof target === "string") {
+        stream.on("finish", () => {
+          resolve(true);
+        });
+        stream.on("error", (err) => {
+          reject(err);
+        });
+      } else {
+        resolve(true);
+      }
+
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+module.exports = { generateInvoicePDF };
