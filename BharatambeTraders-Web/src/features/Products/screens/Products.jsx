@@ -262,7 +262,7 @@ function Products() {
                       {product.category}
                     </span>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-gray-900 notranslate" translate="no">
                     {product.name}
                   </h3>
                   <p className="text-gray-600 mb-1 text-sm">

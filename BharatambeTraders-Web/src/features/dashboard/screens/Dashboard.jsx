@@ -344,7 +344,7 @@ function Dashboard() {
                   {topSellingProducts.map((prod, index) => (
                     <tr key={index} className="text-slate-300 hover:bg-slate-900/20 transition-colors">
                       <td className="py-3 text-slate-400 font-mono">{prod.sku}</td>
-                      <td className="font-semibold text-slate-200">{prod.name}</td>
+                      <td className="font-semibold text-slate-200 notranslate" translate="no">{prod.name}</td>
                       <td className="text-center font-bold text-orange-400">{prod.qty} units</td>
                       <td className="text-right font-bold text-white">₹{prod.revenue.toFixed(2)}</td>
                     </tr>

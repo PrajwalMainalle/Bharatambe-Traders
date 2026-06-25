@@ -320,7 +320,7 @@ function POS() {
 
                 <div className="space-y-1">
                   <div className="flex justify-between items-start gap-1">
-                    <h4 className="font-bold text-slate-205 text-sm line-clamp-1 group-hover:text-orange-400 transition-colors">{product.name}</h4>
+                    <h4 className="font-bold text-slate-205 text-sm line-clamp-1 group-hover:text-orange-400 transition-colors notranslate" translate="no">{product.name}</h4>
                     <span className="text-[9px] px-2 py-0.5 rounded bg-slate-800 text-slate-450 font-mono tracking-tight">{product.sku}</span>
                   </div>
                   <p className="text-[10px] text-slate-500 line-clamp-1">{product.description || "No description provided."}</p>
@@ -397,7 +397,7 @@ function POS() {
             {cart.map((item) => (
               <div key={item.id} className="py-2.5 flex items-center justify-between text-xs gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-slate-200 truncate">{item.name}</p>
+                  <p className="font-semibold text-slate-200 truncate notranslate" translate="no">{item.name}</p>
                   <p className="text-[9px] text-slate-500">₹{item.price.toFixed(2)} | GST: {item.gstRate}%</p>
                 </div>
 
@@ -720,7 +720,7 @@ function POS() {
                               return (
                                 <tr key={idx}>
                                   <td className="text-center">{idx + 1}</td>
-                                  <td className="bold">{item.name.toUpperCase()}</td>
+                                  <td className="bold notranslate" translate="no">{item.name}</td>
                                   <td className="text-center font-mono">{item.qty}</td>
                                   <td className="text-right font-mono">₹{item.price.toFixed(2)}</td>
                                   <td className="text-right font-mono bold">₹{lineTotal.toFixed(2)}</td>

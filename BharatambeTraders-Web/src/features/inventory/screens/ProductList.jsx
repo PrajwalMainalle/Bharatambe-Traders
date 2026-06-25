@@ -267,7 +267,7 @@ function ProductList() {
                             )}
                           </div>
                           <div>
-                            <div className="font-semibold text-slate-100">{prod.name}</div>
+                            <div className="font-semibold text-slate-100 notranslate" translate="no">{prod.name}</div>
                             <div className="text-[10px] text-slate-500 line-clamp-1 max-w-[200px]">{prod.description || "N/A"}</div>
                           </div>
                         </div>

@@ -447,7 +447,7 @@ function InvoiceList() {
                               return (
                                 <tr key={idx}>
                                   <td className="text-center">{idx + 1}</td>
-                                  <td className="bold">{item.name.toUpperCase()}</td>
+                                  <td className="bold notranslate" translate="no">{item.name}</td>
                                   <td className="text-center font-mono">{item.qty}</td>
                                   <td className="text-right font-mono">₹{item.price.toFixed(2)}</td>
                                   <td className="text-right font-mono bold">₹{lineTotal.toFixed(2)}</td>

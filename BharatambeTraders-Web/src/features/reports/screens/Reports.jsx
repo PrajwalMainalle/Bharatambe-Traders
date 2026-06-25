@@ -228,7 +228,7 @@ function Reports() {
                   {reportData.productReport.map((row, idx) => (
                     <tr key={idx} className="hover:bg-slate-900/10 transition-colors">
                       <td className="py-3 px-4 font-mono text-slate-450">{row.sku}</td>
-                      <td className="py-3 px-2 font-semibold text-slate-100">{row.name}</td>
+                      <td className="py-3 px-2 font-semibold text-slate-100 notranslate" translate="no">{row.name}</td>
                       <td className="py-3 px-2 text-center font-bold text-orange-400">{row.qty}</td>
                       <td className="py-3 px-4 text-right font-black text-white">₹{row.revenue.toFixed(2)}</td>
                     </tr>
