@@ -253,7 +253,7 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
         }
 
         // Draw text
-        doc.fillColor("#1e293b").font(fontRegular).fontSize(8.5);
+        doc.fillColor("#000000").font(fontRegular).fontSize(8.5);
         doc.text(String(idx + 1), col1X, currentY + 6, { width: col2X - col1X, align: "center" });
         
         // Render item name (no toUpperCase to preserve exact case as stored in inventory)
