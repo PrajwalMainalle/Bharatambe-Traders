@@ -179,16 +179,25 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
       const doc = new PDFDocument({ size: size, layout: layout, margin: 40 });
 
       // Font Registration for Indic (Kannada, Hindi, English) Scripts
-      const fontPath = "C:\\Windows\\Fonts\\Nirmala.ttc";
+      const localFontPath = path.join(__dirname, "..", "assets", "fonts", "Nirmala.ttc");
+      const systemFontPath = "C:\\Windows\\Fonts\\Nirmala.ttc";
+      let fontPath = "";
+      
+      if (fs.existsSync(localFontPath)) {
+        fontPath = localFontPath;
+      } else if (fs.existsSync(systemFontPath)) {
+        fontPath = systemFontPath;
+      }
+
       let hasNirmala = false;
-      try {
-        if (fs.existsSync(fontPath)) {
+      if (fontPath) {
+        try {
           doc.registerFont("Nirmala", fontPath, "NirmalaUI");
           doc.registerFont("Nirmala-Bold", fontPath, "NirmalaUI-Bold");
           hasNirmala = true;
+        } catch (fontErr) {
+          console.error("Failed to register Nirmala font in PDFGenerator:", fontErr);
         }
-      } catch (fontErr) {
-        console.error("Failed to register Nirmala font in PDFGenerator:", fontErr);
       }
 
       doc.customFontRegular = hasNirmala ? "Nirmala" : "Helvetica";
