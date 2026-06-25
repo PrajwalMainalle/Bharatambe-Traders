@@ -38,7 +38,7 @@ function POS() {
   const [isQuotation, setIsQuotation] = useState(false);
   const [pageSize, setPageSize] = useState("auto");
   const [orientation, setOrientation] = useState("portrait");
-  const [isGstBilling, setIsGstBilling] = useState(true);
+  const [isGstBilling, setIsGstBilling] = useState(false);
 
   // Load products on mount
   useEffect(() => {
@@ -124,6 +124,7 @@ function POS() {
       discountValue,
       isQuotation,
       items: checkoutItems,
+      isGstBilling,
     })).then((res) => {
       if (!res.error) {
         const savedInvoice = res.payload;
@@ -144,6 +145,7 @@ function POS() {
           paymentMethod: savedInvoice.paymentMethod,
           pdfUrl: savedInvoice.pdfUrl,
           isQuotation: savedInvoice.isQuotation,
+          isGstBilling: savedInvoice.isGstBilling,
         });
 
         // Trigger products refetch to synchronize stock counters instantly
@@ -644,7 +646,9 @@ function POS() {
                     <div className="print-receipt">
                       {/* GSTIN / MOBILE Light olive green banner */}
                       <div className="shop-header-banner">
-                        <span>REG.GSTIN: {gstNumber}</span>
+                        {receiptData.isGstBilling !== false && (
+                          <span>REG.GSTIN: {gstNumber}</span>
+                        )}
                         <span>MOBILE: {contactPhone}</span>
                       </div>
 
@@ -757,14 +761,18 @@ function POS() {
                                         </td>
                                       </tr>
                                     )}
-                                    <tr>
-                                      <td className="bold">CGST ({(receiptData.items[0]?.gstRate || 0) / 2}%):</td>
-                                      <td className="text-right font-mono">₹{(receiptData.gstAmount / 2).toFixed(2)}</td>
-                                    </tr>
-                                    <tr>
-                                      <td className="bold">SGST ({(receiptData.items[0]?.gstRate || 0) / 2}%):</td>
-                                      <td className="text-right font-mono">₹{(receiptData.gstAmount / 2).toFixed(2)}</td>
-                                    </tr>
+                                    {receiptData.isGstBilling !== false && (
+                                      <>
+                                        <tr>
+                                          <td className="bold">CGST ({(receiptData.items[0]?.gstRate || 0) / 2}%):</td>
+                                          <td className="text-right font-mono">₹{(receiptData.gstAmount / 2).toFixed(2)}</td>
+                                        </tr>
+                                        <tr>
+                                          <td className="bold">SGST ({(receiptData.items[0]?.gstRate || 0) / 2}%):</td>
+                                          <td className="text-right font-mono">₹{(receiptData.gstAmount / 2).toFixed(2)}</td>
+                                        </tr>
+                                      </>
+                                    )}
                                     <tr style={{ borderTop: "1px solid #94a3b8" }}>
                                       <td className="bold font-extrabold text-orange-600" style={{ fontSize: "10px" }}>
                                         {receiptData.isQuotation ? "ESTIMATED TOTAL" : "GRAND TOTAL"}

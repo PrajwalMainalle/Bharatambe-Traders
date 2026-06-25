@@ -373,7 +373,9 @@ function InvoiceList() {
                     <div className="print-receipt">
                       {/* GSTIN / MOBILE Light olive green banner */}
                       <div className="shop-header-banner">
-                        <span>REG.GSTIN: {gstNumber}</span>
+                        {selectedInvoice.isGstBilling !== false && (
+                          <span>REG.GSTIN: {gstNumber}</span>
+                        )}
                         <span>MOBILE: {contactPhone}</span>
                       </div>
 
@@ -486,14 +488,18 @@ function InvoiceList() {
                                         </td>
                                       </tr>
                                     )}
-                                    <tr>
-                                      <td className="bold">CGST ({(selectedInvoice.items[0]?.gstRate || 0) / 2}%):</td>
-                                      <td className="text-right font-mono">₹{(selectedInvoice.gstAmount / 2).toFixed(2)}</td>
-                                    </tr>
-                                    <tr>
-                                      <td className="bold">SGST ({(selectedInvoice.items[0]?.gstRate || 0) / 2}%):</td>
-                                      <td className="text-right font-mono">₹{(selectedInvoice.gstAmount / 2).toFixed(2)}</td>
-                                    </tr>
+                                    {selectedInvoice.isGstBilling !== false && (
+                                      <>
+                                        <tr>
+                                          <td className="bold">CGST ({(selectedInvoice.items[0]?.gstRate || 0) / 2}%):</td>
+                                          <td className="text-right font-mono">₹{(selectedInvoice.gstAmount / 2).toFixed(2)}</td>
+                                        </tr>
+                                        <tr>
+                                          <td className="bold">SGST ({(selectedInvoice.items[0]?.gstRate || 0) / 2}%):</td>
+                                          <td className="text-right font-mono">₹{(selectedInvoice.gstAmount / 2).toFixed(2)}</td>
+                                        </tr>
+                                      </>
+                                    )}
                                     <tr style={{ borderTop: "1px solid #94a3b8" }}>
                                       <td className="bold font-extrabold text-orange-600" style={{ fontSize: "10px" }}>
                                         {selectedInvoice.status === "Quotation" ? "ESTIMATED TOTAL" : "GRAND TOTAL"}

@@ -269,8 +269,16 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
 
       // summary parameters
       const discountAmount = invoice.discountAmount || 0;
-      const numSummaryRows = discountAmount > 0 ? 5 : 4;
-      const summaryHeight = numSummaryRows * 20;
+      const hasGst = invoice.isGstBilling !== false;
+
+      // Calculate height needed for calculations column
+      let calcRowsHeight = 0;
+      if (discountAmount > 0) calcRowsHeight += 20;
+      if (hasGst) calcRowsHeight += 40;
+
+      // The Grand Total row needs at least 20 points, but expands if needed to ensure the box is at least 75 points tall (so bank details don't overflow)
+      const grandTotalHeight = Math.max(20, 75 - 20 - calcRowsHeight);
+      const summaryHeight = 20 + calcRowsHeight + grandTotalHeight;
 
       // Check if we need another page for the summary rows + signature block
       if (currentY + summaryHeight + 80 > pageHeight - 40) {
@@ -284,10 +292,20 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
       // 1. Draw outer summary box
       doc.rect(margin, currentY, printWidth, summaryHeight).stroke(borderColor);
       
-      // Horizontal dividers (starts from margin for first row divider, and col3X for inner details rows to keep bank details background plain)
-      for (let i = 1; i < numSummaryRows; i++) {
-        const startX = i === 1 ? margin : col3X;
-        doc.moveTo(startX, currentY + i * 20).lineTo(pageWidth - margin, currentY + i * 20).stroke(borderColor);
+      // Divider 1: Below TOTAL row (always, full width)
+      doc.moveTo(margin, currentY + 20).lineTo(pageWidth - margin, currentY + 20).stroke(borderColor);
+
+      // Intermediate calculation row dividers (right column only)
+      let lineY = currentY + 20;
+      if (discountAmount > 0) {
+        lineY += 20;
+        doc.moveTo(col3X, lineY).lineTo(pageWidth - margin, lineY).stroke(borderColor);
+      }
+      if (hasGst) {
+        lineY += 20;
+        doc.moveTo(col3X, lineY).lineTo(pageWidth - margin, lineY).stroke(borderColor);
+        lineY += 20;
+        doc.moveTo(col3X, lineY).lineTo(pageWidth - margin, lineY).stroke(borderColor);
       }
 
       // Row 1: TOTAL columns
@@ -328,20 +346,23 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
         calcY += 20;
       }
 
-      const sgstAmt = invoice.gstAmount / 2;
-      doc.fillColor("#000000").font(fontBold).fontSize(7.5);
-      doc.text("SGST (State Tax)", col3X, calcY + 5, { width: col5X - col3X - 5, align: "right" });
-      doc.font(fontRegular).text(`₹${sgstAmt.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
-      calcY += 20;
+      if (hasGst) {
+        const sgstAmt = invoice.gstAmount / 2;
+        doc.fillColor("#000000").font(fontBold).fontSize(7.5);
+        doc.text("SGST (State Tax)", col3X, calcY + 5, { width: col5X - col3X - 5, align: "right" });
+        doc.font(fontRegular).text(`₹${sgstAmt.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
+        calcY += 20;
 
-      doc.font(fontBold).text("CGST (Central Tax)", col3X, calcY + 5, { width: col5X - col3X - 5, align: "right" });
-      doc.font(fontRegular).text(`₹${sgstAmt.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
-      calcY += 20;
+        doc.font(fontBold).text("CGST (Central Tax)", col3X, calcY + 5, { width: col5X - col3X - 5, align: "right" });
+        doc.font(fontRegular).text(`₹${sgstAmt.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
+        calcY += 20;
+      }
 
       const grandTotalLabel = invoice.isQuotation ? "ESTIMATED TOTAL" : "GRAND TOTAL";
+      const cellPaddingY = (grandTotalHeight - 10) / 2;
       doc.font(fontBold).fontSize(9.5).fillColor("#f97316");
-      doc.text(grandTotalLabel, col3X, calcY + 5, { width: col5X - col3X - 5, align: "right" });
-      doc.text(`₹${invoice.total.toFixed(2)}`, col5X, calcY + 5, { width: col6X - col5X - 5, align: "right" });
+      doc.text(grandTotalLabel, col3X, calcY + cellPaddingY, { width: col5X - col3X - 5, align: "right" });
+      doc.text(`₹${invoice.total.toFixed(2)}`, col5X, calcY + cellPaddingY, { width: col6X - col5X - 5, align: "right" });
 
       // Signatures row
       const footerY = currentY + summaryHeight + 20;
