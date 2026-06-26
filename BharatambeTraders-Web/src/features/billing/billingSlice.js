@@ -121,7 +121,7 @@ const billingSlice = createSlice({
         if (qty <= 0) {
           state.cart = state.cart.filter(item => (item.id !== id && item.productId !== id));
         } else {
-          existingItem.qty = Math.min(qty, existingItem.maxStock);
+          existingItem.qty = qty;
         }
       }
     },

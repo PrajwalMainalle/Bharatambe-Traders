@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { registerTenant, loginTenant, clearError } from "../../auth/authSlice";
 import { 
   FaCalculator, 
@@ -188,7 +188,15 @@ function LandingPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-400 font-semibold">Secret Password</label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-slate-400 font-semibold">Secret Password</label>
+                    <Link 
+                      to="/forgot-password" 
+                      className="text-[10px] text-orange-400 hover:text-orange-300 font-semibold hover:underline"
+                    >
+                      Forgot Password?
+                    </Link>
+                  </div>
                   <div className="relative">
                     <input 
                       type={showLoginPassword ? "text" : "password"}

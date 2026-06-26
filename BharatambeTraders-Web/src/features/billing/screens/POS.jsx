@@ -114,6 +114,20 @@ function POS() {
       return;
     }
 
+    // Verify no item exceeds available stock
+    const overStockItem = cart.find(item => item.qty > item.maxStock);
+    if (overStockItem) {
+      alert(`Cannot proceed to checkout. The requested quantity for '${overStockItem.name}' (${overStockItem.qty}) exceeds the available stock of ${overStockItem.maxStock} units.`);
+      return;
+    }
+
+    // Verify no item has invalid quantity (<= 0)
+    const invalidQtyItem = cart.find(item => item.qty <= 0);
+    if (invalidQtyItem) {
+      alert(`Cannot proceed to checkout. Please specify a valid quantity for '${invalidQtyItem.name}'.`);
+      return;
+    }
+
     const checkoutItems = cart.map(item => ({
       ...item,
       gstRate: isGstBilling ? (item.gstRate || 0) : 0
@@ -394,41 +408,97 @@ function POS() {
           </h3>
 
           <div className="flex-1 divide-y divide-slate-800/50 overflow-y-auto max-h-[250px] mt-2 pr-1 space-y-2">
-            {cart.map((item) => (
-              <div key={item.id} className="py-2.5 flex items-center justify-between text-xs gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-slate-200 truncate notranslate" translate="no">{item.name}</p>
-                  <p className="text-[9px] text-slate-500">₹{item.price.toFixed(2)} | GST: {item.gstRate}%</p>
-                </div>
+            {cart.map((item) => {
+              const exceedsStock = item.qty > item.maxStock;
+              return (
+                <div key={item.id} className="py-2.5 flex flex-col justify-center text-xs gap-1.5 border-b border-slate-800/40">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-slate-200 truncate notranslate" translate="no">{item.name}</p>
+                      <p className="text-[9px] text-slate-500">₹{item.price.toFixed(2)} | GST: {item.gstRate}%</p>
+                    </div>
 
-                <div className="flex items-center gap-1.5">
-                  <button 
-                    onClick={() => dispatch(updateCartQty({ id: item.id, qty: item.qty - 1 }))}
-                    className="w-5 h-5 rounded bg-slate-950 border border-slate-850 hover:bg-slate-800 text-slate-300 flex items-center justify-center"
-                  >
-                    -
-                  </button>
-                  <span className="w-6 text-center font-bold text-slate-100">{item.qty}</span>
-                  <button 
-                    onClick={() => dispatch(updateCartQty({ id: item.id, qty: item.qty + 1 }))}
-                    className="w-5 h-5 rounded bg-slate-950 border border-slate-850 hover:bg-slate-800 text-slate-300 flex items-center justify-center"
-                  >
-                    +
-                  </button>
-                </div>
+                    <div className="flex items-center gap-1">
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          if (item.qty > 1) {
+                            dispatch(updateCartQty({ id: item.id, qty: Number(item.qty) - 1 }));
+                          } else {
+                            dispatch(removeFromCart(item.id));
+                          }
+                        }}
+                        className="w-6 h-6 rounded bg-slate-950 border border-slate-850 hover:bg-slate-800 hover:text-orange-400 text-slate-300 flex items-center justify-center font-bold text-xs select-none transition"
+                        title="Decrease Quantity"
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.qty === 0 ? "" : item.qty}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "") {
+                            dispatch(updateCartQty({ id: item.id, qty: 0 }));
+                          } else {
+                            const parsed = parseInt(val, 10);
+                            if (!isNaN(parsed)) {
+                              dispatch(updateCartQty({ id: item.id, qty: Math.max(0, parsed) }));
+                            }
+                          }
+                        }}
+                        onBlur={() => {
+                          if (item.qty <= 0) {
+                            dispatch(removeFromCart(item.id));
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.target.blur();
+                          }
+                        }}
+                        className={`w-12 h-6 text-center font-bold bg-slate-950 border rounded text-xs text-slate-100 focus:outline-none focus:border-orange-500
+                          ${exceedsStock ? "border-rose-500 text-rose-450 focus:border-rose-500" : "border-slate-850"}
+                        `}
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          if (item.qty < item.maxStock) {
+                            dispatch(updateCartQty({ id: item.id, qty: Number(item.qty) + 1 }));
+                          } else {
+                            alert(`Warning: Cannot increase quantity beyond available stock (${item.maxStock} units).`);
+                          }
+                        }}
+                        className="w-6 h-6 rounded bg-slate-950 border border-slate-850 hover:bg-slate-800 hover:text-orange-400 text-slate-300 flex items-center justify-center font-bold text-xs select-none transition"
+                        title="Increase Quantity"
+                      >
+                        +
+                      </button>
+                    </div>
 
-                <div className="text-right pl-1">
-                  <p className="font-bold text-slate-200 font-mono">₹{(item.price * item.qty).toFixed(2)}</p>
-                  <button 
-                    onClick={() => dispatch(removeFromCart(item.id))}
-                    className="text-slate-655 hover:text-red-400 transition-colors mt-0.5"
-                    title="Remove item"
-                  >
-                    <MdDeleteOutline size={16} />
-                  </button>
+                    <div className="text-right pl-1 min-w-[70px]">
+                      <p className="font-bold text-slate-200 font-mono">₹{(item.price * item.qty).toFixed(2)}</p>
+                      <button 
+                        onClick={() => dispatch(removeFromCart(item.id))}
+                        className="text-slate-600 hover:text-red-400 transition-colors mt-0.5"
+                        title="Remove item"
+                      >
+                        <MdDeleteOutline size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {exceedsStock && (
+                    <div className="text-[10px] text-rose-500 font-bold bg-rose-500/5 px-2 py-0.5 rounded border border-rose-500/25 flex items-center justify-between">
+                      <span>⚠️ Exceeds stock</span>
+                      <span>Max available: {item.maxStock}</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {cart.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center py-12 text-slate-600">
@@ -567,9 +637,9 @@ function POS() {
         {/* Checkout Button */}
         <button
           onClick={handleCheckout}
-          disabled={cart.length === 0 || checkoutLoading}
+          disabled={cart.length === 0 || checkoutLoading || cart.some(item => item.qty > item.maxStock || item.qty <= 0)}
           className={`w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-transform transform active:scale-98 text-xs
-            ${cart.length === 0 
+            ${(cart.length === 0 || cart.some(item => item.qty > item.maxStock || item.qty <= 0))
               ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
               : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white"
             }

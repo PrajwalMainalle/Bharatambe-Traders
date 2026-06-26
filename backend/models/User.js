@@ -26,6 +26,18 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordTokenExpires: {
+      type: Date,
+    },
+    resetPasswordOtp: {
+      type: String,
+    },
+    resetPasswordOtpExpires: {
+      type: Date,
+    },
     profile: {
       shopName: { type: String, default: "" },
       gstNumber: { type: String, default: "" },
