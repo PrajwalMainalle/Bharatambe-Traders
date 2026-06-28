@@ -72,6 +72,23 @@ export const convertQuotation = createAsyncThunk(
   }
 );
 
+export const settleInvoice = createAsyncThunk(
+  "billing/settleInvoice",
+  async ({ invoiceId, settlementMethod, settlementDate }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.put(`/billing/${invoiceId}/settle`, {
+        settlementMethod,
+        settlementDate
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to settle credit invoice"
+      );
+    }
+  }
+);
+
 const billingSlice = createSlice({
   name: "billing",
   initialState: {
@@ -282,6 +299,27 @@ const billingSlice = createSlice({
         }
       })
       .addCase(convertQuotation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Settle Credit Invoice
+      .addCase(settleInvoice.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(settleInvoice.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.invoices.findIndex(
+          inv => (inv._id === action.payload._id || inv.id === action.payload.invoiceId)
+        );
+        if (index !== -1) {
+          state.invoices[index] = {
+            ...action.payload,
+            id: action.payload.invoiceId,
+          };
+        }
+      })
+      .addCase(settleInvoice.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

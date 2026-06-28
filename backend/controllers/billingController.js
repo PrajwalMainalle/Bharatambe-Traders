@@ -300,10 +300,42 @@ const streamInvoicePDF = async (req, res) => {
   }
 };
 
+// @desc    Settle Credit Invoice
+// @route   PUT /api/billing/:id/settle
+// @access  Private
+const settleInvoice = async (req, res) => {
+  const { settlementMethod, settlementDate } = req.body;
+  try {
+    const invoice = await Invoice.findOne({ _id: req.params.id, tenantId: req.user._id });
+    if (!invoice) {
+      return res.status(404).json({ message: "Invoice not found or unauthorized" });
+    }
+
+    if (invoice.paymentMethod !== "Credit") {
+      return res.status(400).json({ message: "Only Credit invoices can be settled" });
+    }
+
+    if (!["Cash", "UPI", "Card"].includes(settlementMethod)) {
+      return res.status(400).json({ message: "Invalid settlement method. Must be Cash, UPI, or Card." });
+    }
+
+    invoice.creditSettled = true;
+    invoice.settlementDate = settlementDate ? new Date(settlementDate) : new Date();
+    invoice.settlementMethod = settlementMethod;
+
+    const savedInvoice = await invoice.save();
+    res.status(200).json(savedInvoice);
+  } catch (error) {
+    console.error("Invoice Settlement Error:", error);
+    res.status(500).json({ message: "Failed to settle credit invoice", error: error.message });
+  }
+};
+
 module.exports = {
   getInvoices,
   createInvoice,
   refundInvoice,
   convertQuotationToSale,
   streamInvoicePDF,
+  settleInvoice,
 };

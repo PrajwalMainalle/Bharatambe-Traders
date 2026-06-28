@@ -131,6 +131,11 @@ function POS() {
       return;
     }
 
+    if (paymentMethod === "Credit" && (!customerName || customerName === "Walk-in Customer")) {
+      alert("Please select or search a valid customer for Credit bills. Walk-in Customer cannot be used for Credit transactions.");
+      return;
+    }
+
     // Verify no item exceeds available stock
     const overStockItem = cart.find(item => item.qty > item.maxStock);
     if (overStockItem) {
@@ -760,8 +765,8 @@ function POS() {
         {/* Payment mode choice */}
         <div className="space-y-2.5">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-450 block">Payment Method</span>
-          <div className="grid grid-cols-3 gap-2">
-            {["Cash", "UPI", "Card"].map((method) => {
+          <div className="grid grid-cols-4 gap-1.5">
+            {["Cash", "UPI", "Card", "Credit"].map((method) => {
               const active = paymentMethod === method;
               return (
                 <button

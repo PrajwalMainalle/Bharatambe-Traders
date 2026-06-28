@@ -242,6 +242,7 @@ function Dashboard() {
                 let textClass = "text-orange-400";
                 if (method === "UPI") { colorBar = "bg-emerald-500"; textClass = "text-emerald-400"; }
                 if (method === "Card") { colorBar = "bg-blue-500"; textClass = "text-blue-400"; }
+                if (method === "Credit") { colorBar = "bg-purple-500"; textClass = "text-purple-400"; }
 
                 return (
                   <div key={method} className="space-y-1.5">
@@ -307,6 +308,7 @@ function Dashboard() {
                           ${inv.paymentMethod === "UPI" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : ""}
                           ${inv.paymentMethod === "Cash" ? "bg-orange-500/10 border-orange-500/20 text-orange-400" : ""}
                           ${inv.paymentMethod === "Card" ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : ""}
+                          ${inv.paymentMethod === "Credit" ? "bg-purple-500/10 border-purple-500/20 text-purple-400" : ""}
                         `}>
                           {inv.paymentMethod}
                         </span>

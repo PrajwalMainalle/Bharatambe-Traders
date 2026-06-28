@@ -96,7 +96,7 @@ const InvoiceSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["Cash", "UPI", "Card"],
+      enum: ["Cash", "UPI", "Card", "Credit"],
       default: "Cash",
     },
     status: {
@@ -112,9 +112,20 @@ const InvoiceSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    pdfUrl: {
+     pdfUrl: {
       type: String,
       default: "",
+    },
+    creditSettled: {
+      type: Boolean,
+      default: false,
+    },
+    settlementDate: {
+      type: Date,
+    },
+    settlementMethod: {
+      type: String,
+      enum: ["Cash", "UPI", "Card"],
     },
   },
   { timestamps: true }

@@ -109,9 +109,23 @@ const drawPageHeader = (doc, invoice, tenant, pageNum) => {
       doc.text(`PHONE: ${invoice.customerPhone}`, margin + printWidth - 150, metaY + 15, { align: "right", width: 145 });
     }
 
-    doc.moveTo(margin, metaY + 30).lineTo(pageWidth - margin, metaY + 30).stroke(borderColor);
+    let offset = 0;
+    if (invoice.paymentMethod === "Credit") {
+      offset = 12;
+      doc.font(fontBold).fontSize(8.5);
+      if (invoice.creditSettled) {
+        doc.fillColor("#16a34a"); // green
+        doc.text(`STATUS: SETTLED via ${invoice.settlementMethod.toUpperCase()} on ${new Date(invoice.settlementDate).toLocaleDateString("en-IN")}`, margin + 5, metaY + 30);
+      } else {
+        doc.fillColor("#b91c1c"); // red
+        doc.text("STATUS: UNPAID (CREDIT OUTSTANDING)", margin + 5, metaY + 30);
+      }
+      doc.fillColor("#000000"); // reset
+    }
+
+    doc.moveTo(margin, metaY + 30 + offset).lineTo(pageWidth - margin, metaY + 30 + offset).stroke(borderColor);
     
-    return metaY + 36;
+    return metaY + 36 + offset;
   } else {
     // Page 2+ compact header
     doc.fillColor(primaryColor).font(fontBold).fontSize(10);
@@ -168,7 +182,8 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
       let qrBuffer = null;
       if (!hasGst) {
         try {
-          const upiString = `upi://pay?pa=6361037157@ybl&pn=Bharatambe%20Traders&cu=INR&am=${invoice.total.toFixed(2)}`;
+          const qrPhone = invoice.total >= 5000 ? "6364676448" : "6361037157";
+          const upiString = `upi://pay?pa=${qrPhone}@ybl&pn=Bharatambe%20Traders&cu=INR&am=${invoice.total.toFixed(2)}`;
           qrBuffer = await QRCode.toBuffer(upiString, { width: 120, margin: 1 });
         } catch (qrErr) {
           console.error("Failed to generate QR Code for invoice PDF:", qrErr);
@@ -355,6 +370,16 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
         doc.text(`Account Name:  ${shopNameStr}`, margin + 8, bankDetailsY + 11, { width: col3X - margin - 16 });
         doc.text("Bank Name:      CANARA BANK, BASAVAKALYAN BRANCH", margin + 8, bankDetailsY + 20, { width: col3X - margin - 16 });
         doc.text("A/C Number:     120033287950  |  IFSC Code: CNRB0010700", margin + 8, bankDetailsY + 29, { width: col3X - margin - 16 });
+      } else if (invoice.paymentMethod === "Credit" && invoice.creditSettled) {
+        doc.fillColor("#16a34a").font(fontBold).fontSize(8.5);
+        doc.text("CREDIT STATUS:", margin + 8, bankDetailsY - 2);
+        
+        doc.fillColor("#0f172a").font(fontBold).fontSize(8);
+        doc.text("FULLY SETTLED & PAID", margin + 8, bankDetailsY + 10);
+        doc.font(fontRegular).fontSize(7);
+        doc.text(`Method: ${invoice.settlementMethod.toUpperCase()}`, margin + 8, bankDetailsY + 19);
+        doc.text(`Date:   ${new Date(invoice.settlementDate).toLocaleDateString("en-IN")}`, margin + 8, bankDetailsY + 27);
+        doc.fillColor("#64748b").fontSize(6.5).text("Thank you for your business!", margin + 8, bankDetailsY + 36);
       } else {
         doc.fillColor("#b91c1c").font(fontBold).fontSize(8);
         doc.text("SCAN & PAY (UPI):", margin + 8, bankDetailsY - 2);
@@ -369,8 +394,8 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
         
         doc.fillColor("#0f172a").font(fontBold).fontSize(7.5);
         doc.text("BHARATAMBE TRADERS", margin + 56, bankDetailsY + 10);
-        doc.font(fontRegular).fontSize(7);
-        doc.text("Mobile: 6361037157", margin + 56, bankDetailsY + 18);
+        const qrPhone = invoice.total >= 5000 ? "6364676448" : "6361037157";
+        doc.text(`Mobile: ${qrPhone}`, margin + 56, bankDetailsY + 18);
         doc.text(`Amount: ₹${invoice.total.toFixed(2)}`, margin + 56, bankDetailsY + 26);
         doc.fillColor("#64748b").fontSize(6.5).text("Scan with GPay/PhonePe/Paytm", margin + 56, bankDetailsY + 34);
       }

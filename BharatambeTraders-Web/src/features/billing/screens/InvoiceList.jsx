@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { IoSearch } from "react-icons/io5";
 import { FaFileInvoice, FaPrint, FaTimes, FaUndo, FaCheckCircle, FaExclamationCircle, FaSpinner, FaDownload } from "react-icons/fa";
-import { fetchInvoices, refundInvoice, convertQuotation } from "../billingSlice";
+import { fetchInvoices, refundInvoice, convertQuotation, settleInvoice } from "../billingSlice";
 import { fetchProducts } from "../../inventory/inventorySlice";
 import logo from "../../../assets/SLLogo.png";
 
@@ -16,6 +16,10 @@ function InvoiceList() {
   const [paymentFilter, setPaymentFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+
+  // Settlement dialog states
+  const [showSettleModal, setShowSettleModal] = useState(false);
+  const [settleForm, setSettleForm] = useState({ invoiceId: "", invoiceCode: "", settlementMethod: "Cash", settlementDate: "" });
 
   // PDF Page Size & Orientation settings
   const [pageSize, setPageSize] = useState("auto");
@@ -32,6 +36,11 @@ function InvoiceList() {
   const refundCount = invoices.filter(inv => inv.status === "Refunded").length;
   const averageTicket = activeInvoices.length > 0 ? totalRevenue / activeInvoices.length : 0;
 
+  // Credit metrics
+  const creditInvoices = invoices.filter(inv => inv.paymentMethod === "Credit" && inv.status !== "Refunded");
+  const creditCount = creditInvoices.length;
+  const totalCreditAmt = creditInvoices.reduce((acc, curr) => acc + curr.total, 0);
+
   // Filtered List
   const filteredInvoices = invoices.filter((inv) => {
     const matchesSearch = 
@@ -40,7 +49,17 @@ function InvoiceList() {
       inv.customerPhone.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesPayment = paymentFilter === "All" || inv.paymentMethod === paymentFilter;
-    const matchesStatus = statusFilter === "All" || inv.status === statusFilter;
+    
+    let matchesStatus = false;
+    if (statusFilter === "All") {
+      matchesStatus = true;
+    } else if (statusFilter === "Unpaid") {
+      matchesStatus = inv.paymentMethod === "Credit" && !inv.creditSettled;
+    } else if (statusFilter === "Paid") {
+      matchesStatus = inv.status === "Paid" && !(inv.paymentMethod === "Credit" && !inv.creditSettled);
+    } else {
+      matchesStatus = inv.status === statusFilter;
+    }
 
     return matchesSearch && matchesPayment && matchesStatus;
   });
@@ -75,6 +94,23 @@ function InvoiceList() {
         }
       });
     }
+  };
+
+  // Settle Credit Action
+  const handleSettleSubmit = (e) => {
+    e.preventDefault();
+    if (!settleForm.settlementMethod) {
+      alert("Please select a settlement method.");
+      return;
+    }
+    dispatch(settleInvoice(settleForm)).then((res) => {
+      if (!res.error) {
+        alert(`Invoice ${settleForm.invoiceCode} credit settled successfully!`);
+        setShowSettleModal(false);
+      } else {
+        alert(res.payload || "Failed to settle invoice credit");
+      }
+    });
   };
 
   const getDynamicPdfUrl = () => {
@@ -151,7 +187,7 @@ function InvoiceList() {
         )}
 
         {/* Statistical summary boxes */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">Gross Sales</span>
             <p className="text-xl font-bold text-white mt-1">₹{totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p>
@@ -163,6 +199,11 @@ function InvoiceList() {
           <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">Avg ticket value</span>
             <p className="text-xl font-bold text-white mt-1">₹{averageTicket.toFixed(2)}</p>
+          </div>
+          <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl border-purple-900/40">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-purple-400">Outstanding Credit</span>
+            <p className="text-xl font-bold text-purple-400 mt-1">₹{totalCreditAmt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p>
+            <p className="text-[9px] text-slate-550 mt-0.5">{creditCount} Credit Bills</p>
           </div>
           <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">Refunded counts</span>
@@ -196,6 +237,7 @@ function InvoiceList() {
                 <option value="Cash">Cash</option>
                 <option value="UPI">UPI</option>
                 <option value="Card">Card</option>
+                <option value="Credit">Credit</option>
               </select>
             </div>
 
@@ -209,6 +251,7 @@ function InvoiceList() {
               >
                 <option value="All">All Statuses</option>
                 <option value="Paid">Paid</option>
+                <option value="Unpaid">Unpaid</option>
                 <option value="Refunded">Refunded</option>
                 <option value="Quotation">Quotation</option>
               </select>
@@ -252,37 +295,79 @@ function InvoiceList() {
                         <div className="text-[10px] text-slate-500">{inv.customerPhone}</div>
                       </td>
                       <td className="py-4 px-2">
-                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase border
-                          ${inv.paymentMethod === "UPI" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : ""}
-                          ${inv.paymentMethod === "Cash" ? "bg-orange-500/10 border-orange-500/20 text-orange-400" : ""}
-                          ${inv.paymentMethod === "Card" ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : ""}
-                        `}>
-                          {inv.paymentMethod}
-                        </span>
+                        {inv.paymentMethod === "Credit" ? (
+                          <div className="flex flex-col gap-0.5 items-start">
+                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase border
+                              ${inv.creditSettled 
+                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
+                                : "bg-purple-500/10 border-purple-500/20 text-purple-400"
+                              }
+                            `}>
+                              {inv.creditSettled ? `Paid: ${inv.settlementMethod}` : "Credit (Unpaid)"}
+                            </span>
+                            {inv.creditSettled && (
+                              <span className="text-[9px] text-slate-500 font-mono">
+                                Date: {new Date(inv.settlementDate).toLocaleDateString("en-IN")}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase border
+                            ${inv.paymentMethod === "UPI" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : ""}
+                            ${inv.paymentMethod === "Cash" ? "bg-orange-500/10 border-orange-500/20 text-orange-400" : ""}
+                            ${inv.paymentMethod === "Card" ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : ""}
+                          `}>
+                            {inv.paymentMethod}
+                          </span>
+                        )}
                       </td>
                       <td className="py-4 px-2">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border
-                          ${inv.status === "Paid" 
-                            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
-                            : inv.status === "Quotation"
-                            ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
-                            : "bg-rose-500/10 border-rose-500/20 text-rose-500"
-                          }
-                        `}>
-                          {inv.status === "Paid" ? <FaCheckCircle /> : <FaExclamationCircle />}
-                          {inv.status}
-                        </span>
+                        {inv.paymentMethod === "Credit" && !inv.creditSettled ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border bg-rose-500/10 border-rose-500/20 text-rose-500">
+                            <FaExclamationCircle className="text-[10px]" />
+                            Unpaid
+                          </span>
+                        ) : (
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border
+                            ${inv.status === "Paid" 
+                              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
+                              : inv.status === "Quotation"
+                              ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                              : "bg-rose-500/10 border-rose-500/20 text-rose-500"
+                            }
+                          `}>
+                            {inv.status === "Paid" ? <FaCheckCircle /> : <FaExclamationCircle />}
+                            {inv.status}
+                          </span>
+                        )}
                       </td>
                       <td className="py-4 px-2 text-right font-black text-white">₹{inv.total.toFixed(2)}</td>
                       <td className="py-4 px-4 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button 
                             onClick={() => setSelectedInvoice(inv)}
-                            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 font-semibold text-xs transition"
+                            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded border border-slate-700 font-semibold text-xs transition"
                             title="View Detailed Tax Receipt"
                           >
                             Receipt
                           </button>
+                          {inv.paymentMethod === "Credit" && !inv.creditSettled && inv.status === "Paid" && (
+                            <button 
+                              onClick={() => {
+                                setSettleForm({
+                                  invoiceId: inv._id,
+                                  invoiceCode: inv.invoiceId,
+                                  settlementMethod: "Cash",
+                                  settlementDate: new Date().toISOString().split('T')[0]
+                                });
+                                setShowSettleModal(true);
+                              }}
+                              className="px-2.5 py-1.5 bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-white rounded border border-purple-500/20 font-semibold text-xs transition font-bold"
+                              title="Settle Credit Outstanding"
+                            >
+                              Settle
+                            </button>
+                          )}
                           {inv.status === "Paid" && (
                             <button 
                               onClick={() => handleRefund(inv)}
@@ -567,6 +652,83 @@ function InvoiceList() {
               )}
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* SETTLE CREDIT INVOICE MODAL */}
+      {showSettleModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative">
+            <div className="bg-slate-950 px-5 py-3.5 flex items-center justify-between border-b border-slate-900">
+              <h3 className="font-bold text-white flex items-center gap-2 text-xs">
+                <FaCheckCircle className="text-purple-400" /> Settle Credit Outstanding
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => setShowSettleModal(false)} 
+                className="text-slate-400 hover:text-slate-200"
+              >
+                <FaTimes size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSettleSubmit} className="p-5 space-y-4 text-xs">
+              <div>
+                <p className="text-slate-400 mb-1">Settling payment for invoice:</p>
+                <p className="font-mono text-sm font-bold text-white">{settleForm.invoiceCode}</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-slate-450 font-bold uppercase tracking-wider text-[10px]">Settlement Method</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {["Cash", "UPI", "Card"].map((method) => {
+                    const active = settleForm.settlementMethod === method;
+                    return (
+                      <button
+                        key={method}
+                        type="button"
+                        onClick={() => setSettleForm({ ...settleForm, settlementMethod: method })}
+                        className={`py-2 rounded-lg text-xs font-bold border transition-all duration-150
+                          ${active 
+                            ? "bg-slate-950 border-purple-500 text-purple-400 font-extrabold shadow" 
+                            : "bg-slate-950/40 border-slate-900 text-slate-400 hover:text-slate-250"
+                          }
+                        `}
+                      >
+                        {method}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-450 font-bold uppercase tracking-wider text-[10px]">Payment Date</label>
+                <input 
+                  type="date" required
+                  value={settleForm.settlementDate}
+                  onChange={(e) => setSettleForm({ ...settleForm, settlementDate: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-100 focus:outline-none focus:border-purple-500 font-mono"
+                />
+              </div>
+
+              <div className="pt-3 flex gap-2.5 border-t border-slate-900">
+                <button 
+                  type="button" 
+                  onClick={() => setShowSettleModal(false)}
+                  className="flex-1 py-2 bg-slate-850 hover:bg-slate-800 text-slate-350 hover:text-white border border-slate-800 rounded-xl font-bold"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 py-2 bg-gradient-to-r from-purple-650 to-indigo-650 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold"
+                >
+                  Confirm Payment
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
