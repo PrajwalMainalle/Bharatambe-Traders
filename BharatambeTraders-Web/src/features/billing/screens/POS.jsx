@@ -295,6 +295,7 @@ function POS() {
     setNewCustForm({ ...newCustForm, customerType: typeVal, priceCategory: categoryVal });
   };
 
+
   const handleAddManualItemSubmit = (e) => {
     e.preventDefault();
     if (!manualItemForm.name || !manualItemForm.price) {
@@ -314,7 +315,7 @@ function POS() {
   const logoSrc = profile.logo || logo;
 
   return (
-    <div className="flex flex-col xl:flex-row gap-6 bg-slate-950 text-slate-100 min-h-screen rounded-2xl border border-slate-900 overflow-hidden relative">
+    <div className="flex flex-col xl:flex-row gap-6 bg-slate-950 text-slate-100 min-h-screen xl:min-h-0 xl:h-[calc(100vh-96px)] rounded-2xl border border-slate-900 overflow-hidden relative">
       
       {checkoutLoading && (
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-30">
@@ -326,7 +327,7 @@ function POS() {
       )}
 
       {/* LEFT: PRODUCTS BROWSER */}
-      <div className="flex-1 p-6 space-y-6 flex flex-col h-full overflow-y-auto">
+      <div className="flex-1 p-6 space-y-6 flex flex-col xl:h-full xl:overflow-y-auto">
         
         {/* Search, SKU scanner input */}
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -459,7 +460,7 @@ function POS() {
       </div>
 
       {/* RIGHT: CART AND CHECKOUT LOGIC */}
-      <div className="w-full xl:w-96 bg-slate-900 border-t xl:border-t-0 xl:border-l border-slate-900 p-6 flex flex-col h-full overflow-y-auto space-y-6">
+      <div className="w-full xl:w-96 bg-slate-900 border-t xl:border-t-0 xl:border-l border-slate-900 p-6 flex flex-col xl:h-full xl:overflow-y-auto space-y-6">
         
         {/* Customer logging */}
         <div className="space-y-3 relative">

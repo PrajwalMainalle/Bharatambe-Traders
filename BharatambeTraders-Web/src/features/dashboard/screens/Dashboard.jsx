@@ -194,7 +194,16 @@ function Dashboard() {
                     {/* Points and Tooltips */}
                     {points.map((p, idx) => (
                       <g key={idx}>
-                        <circle cx={p.x} cy={p.y} r="5" fill="#1e1b4b" stroke="#f97316" strokeWidth="2.5" className="hover:scale-125 transition-transform cursor-pointer" />
+                        <circle 
+                          cx={p.x} 
+                          cy={p.y} 
+                          r="5" 
+                          fill="#1e1b4b" 
+                          stroke="#f97316" 
+                          strokeWidth="2.5" 
+                          className="hover:scale-125 transition-transform cursor-pointer" 
+                          style={{ transformOrigin: `${p.x}px ${p.y}px` }}
+                        />
                         
                         {/* Tooltip value */}
                         <text x={p.x} y={p.y - 12} fill="#cbd5e1" fontSize="10" textAnchor="middle" fontWeight="bold">
