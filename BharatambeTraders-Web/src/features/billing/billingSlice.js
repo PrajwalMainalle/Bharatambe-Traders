@@ -20,12 +20,12 @@ export const checkout = createAsyncThunk(
   "billing/checkout",
   async (checkoutData, { getState, rejectWithValue }) => {
     try {
-      // checkoutData should contain: customerName, customerPhone, items, discountPercent, paymentMethod
       const state = getState().billing;
       
       const payload = {
         customerName: state.customerName,
         customerPhone: state.customerPhone,
+        customerType: state.customerType,
         items: state.cart,
         discountPercent: state.discount,
         paymentMethod: state.paymentMethod,
@@ -78,6 +78,8 @@ const billingSlice = createSlice({
     cart: [],
     customerName: "",
     customerPhone: "",
+    customerType: "Retail",
+    priceCategory: "retail",
     discount: 0, // Percent
     paymentMethod: "Cash",
     invoices: [],
@@ -89,6 +91,13 @@ const billingSlice = createSlice({
       // payload: product object
       const product = action.payload;
       const existingItem = state.cart.find(item => (item.id === product.id || item.productId === product.id));
+      const category = state.priceCategory ? state.priceCategory.toLowerCase() : "retail";
+      
+      // Get appropriate price from map or fall back
+      const pricesObj = product.prices || {};
+      const selectedPrice = pricesObj[category] !== undefined 
+        ? pricesObj[category] 
+        : (pricesObj["retail"] !== undefined ? pricesObj["retail"] : product.price);
 
       if (existingItem) {
         if (existingItem.qty < product.stock) {
@@ -100,7 +109,10 @@ const billingSlice = createSlice({
             id: product.id || product._id,
             productId: product._id || product.id,
             name: product.name,
-            price: product.price,
+            originalPrice: product.price,
+            prices: pricesObj, // Keep original pricing tiers reference
+            price: selectedPrice,
+            priceCategoryUsed: category,
             gstRate: product.gstRate,
             sku: product.sku,
             qty: 1,
@@ -125,10 +137,34 @@ const billingSlice = createSlice({
         }
       }
     },
+    updateCartItemPrice: (state, action) => {
+      // payload: { id, price }
+      const { id, price } = action.payload;
+      const existingItem = state.cart.find(item => (item.id === id || item.productId === id));
+      if (existingItem) {
+        existingItem.price = parseFloat(price) || 0;
+        existingItem.priceCategoryUsed = "manual";
+      }
+    },
     setCustomerInfo: (state, action) => {
-      // payload: { name, phone }
-      state.customerName = action.payload.name;
-      state.customerPhone = action.payload.phone;
+      // payload: { name, phone, customerType, priceCategory }
+      state.customerName = action.payload.name || "";
+      state.customerPhone = action.payload.phone || "";
+      state.customerType = action.payload.customerType || "Retail";
+      state.priceCategory = action.payload.priceCategory || "retail";
+
+      // Recalculate price levels for existing items in cart (skip manually overridden ones)
+      state.cart.forEach(item => {
+        if (item.priceCategoryUsed !== "manual" && item.prices) {
+          const category = state.priceCategory.toLowerCase();
+          const pricesObj = item.prices || {};
+          const selectedPrice = pricesObj[category] !== undefined 
+            ? pricesObj[category] 
+            : (pricesObj["retail"] !== undefined ? pricesObj["retail"] : item.originalPrice);
+          item.price = selectedPrice;
+          item.priceCategoryUsed = category;
+        }
+      });
     },
     setPaymentMethod: (state, action) => {
       state.paymentMethod = action.payload;
@@ -141,6 +177,8 @@ const billingSlice = createSlice({
       state.cart = [];
       state.customerName = "";
       state.customerPhone = "";
+      state.customerType = "Retail";
+      state.priceCategory = "retail";
       state.discount = 0;
       state.paymentMethod = "Cash";
     },
@@ -235,6 +273,7 @@ export const {
   addToCart,
   removeFromCart,
   updateCartQty,
+  updateCartItemPrice,
   setCustomerInfo,
   setPaymentMethod,
   setDiscount,

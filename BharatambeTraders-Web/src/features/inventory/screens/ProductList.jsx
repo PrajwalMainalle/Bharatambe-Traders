@@ -24,6 +24,15 @@ function ProductList() {
     description: "",
     category: "Stationery",
     price: "",
+    prices: {
+      purchase: "",
+      retail: "",
+      shop: "",
+      school: "",
+      wholesale: "",
+      dealer: ""
+    },
+    customPrices: [], // array of { category: "", price: "" } for custom tiers
     gstRate: "18",
     stock: "",
     image: ""
@@ -53,20 +62,46 @@ function ProductList() {
     return matchesCategory && matchesSearch;
   });
 
+  // Helper to compile prices for saving
+  const compilePricesForSubmit = () => {
+    const productPrices = {};
+    
+    // Compile standard prices
+    Object.keys(formData.prices).forEach(k => {
+      if (formData.prices[k] !== "") {
+        productPrices[k] = parseFloat(formData.prices[k]) || 0;
+      } else {
+        productPrices[k] = 0;
+      }
+    });
+
+    // Compile custom prices
+    formData.customPrices.forEach(item => {
+      if (item.category.trim() !== "" && item.price !== "") {
+        productPrices[item.category.trim().toLowerCase()] = parseFloat(item.price) || 0;
+      }
+    });
+
+    return productPrices;
+  };
+
   // Handle Add Product Submit
   const handleAddSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.sku || !formData.price || !formData.stock) {
-      alert("Please fill all required fields.");
+    if (!formData.name || !formData.sku || !formData.prices.retail || !formData.stock) {
+      alert("Please fill all required fields (Name, SKU, Retail Price, Stock).");
       return;
     }
+
+    const productPrices = compilePricesForSubmit();
 
     const newProd = {
       name: formData.name,
       sku: formData.sku,
       description: formData.description,
       category: formData.category,
-      price: parseFloat(formData.price),
+      price: productPrices.retail || parseFloat(formData.price || 0),
+      prices: productPrices,
       gstRate: parseInt(formData.gstRate),
       stock: parseInt(formData.stock),
       image: formData.image
@@ -85,12 +120,35 @@ function ProductList() {
   // Trigger Edit Modal
   const openEditModal = (prod) => {
     setCurrentProduct(prod);
+    
+    const pricesObj = prod.prices || {};
+    // Extract standard prices (Maps inside JSON are just standard objects in Redux/state payload)
+    const standardPrices = {
+      purchase: (pricesObj.purchase !== undefined ? pricesObj.purchase : "").toString(),
+      retail: (pricesObj.retail !== undefined ? pricesObj.retail : prod.price || "").toString(),
+      shop: (pricesObj.shop !== undefined ? pricesObj.shop : "").toString(),
+      school: (pricesObj.school !== undefined ? pricesObj.school : "").toString(),
+      wholesale: (pricesObj.wholesale !== undefined ? pricesObj.wholesale : "").toString(),
+      dealer: (pricesObj.dealer !== undefined ? pricesObj.dealer : "").toString()
+    };
+
+    // Extract custom prices (any price keys other than standard ones)
+    const standardKeys = ["purchase", "retail", "shop", "school", "wholesale", "dealer"];
+    const customList = [];
+    Object.keys(pricesObj).forEach(key => {
+      if (!standardKeys.includes(key)) {
+        customList.push({ category: key, price: pricesObj[key].toString() });
+      }
+    });
+
     setFormData({
       name: prod.name,
       sku: prod.sku,
       description: prod.description || "",
       category: prod.category,
       price: prod.price.toString(),
+      prices: standardPrices,
+      customPrices: customList,
       gstRate: prod.gstRate.toString(),
       stock: prod.stock.toString(),
       image: prod.image || ""
@@ -101,10 +159,12 @@ function ProductList() {
   // Handle Edit Product Submit
   const handleEditSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.sku || !formData.price || !formData.stock) {
-      alert("Please fill all required fields.");
+    if (!formData.name || !formData.sku || !formData.prices.retail || !formData.stock) {
+      alert("Please fill all required fields (Name, SKU, Retail Price, Stock).");
       return;
     }
+
+    const productPrices = compilePricesForSubmit();
 
     const updatedProd = {
       _id: currentProduct._id || currentProduct.id,
@@ -112,7 +172,8 @@ function ProductList() {
       sku: formData.sku,
       description: formData.description,
       category: formData.category,
-      price: parseFloat(formData.price),
+      price: productPrices.retail || parseFloat(formData.price || 0),
+      prices: productPrices,
       gstRate: parseInt(formData.gstRate),
       stock: parseInt(formData.stock),
       image: formData.image
@@ -147,6 +208,15 @@ function ProductList() {
       description: "",
       category: "Stationery",
       price: "",
+      prices: {
+        purchase: "",
+        retail: "",
+        shop: "",
+        school: "",
+        wholesale: "",
+        dealer: ""
+      },
+      customPrices: [],
       gstRate: "18",
       stock: "",
       image: ""
@@ -273,7 +343,57 @@ function ProductList() {
                         </div>
                       </td>
                       <td className="py-4 px-2 text-slate-400">{prod.category}</td>
-                      <td className="py-4 px-2 text-right font-bold text-white">₹{prod.price.toFixed(2)}</td>
+                      <td className="py-4 px-2 text-right relative group">
+                        <div className="font-bold text-white cursor-help">
+                          ₹{prod.price.toFixed(2)}
+                          <span className="text-[9px] text-slate-500 block font-normal capitalize">retail rate</span>
+                        </div>
+                        
+                        {/* Hover Tooltip Card */}
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 invisible group-hover:visible bg-slate-900 border border-slate-800 p-3 rounded-lg shadow-xl text-left text-[11px] text-slate-350 min-w-[160px] space-y-1.5 transition-all duration-150 transform scale-95 group-hover:scale-100">
+                          <h5 className="font-black text-orange-400 uppercase tracking-wider text-[9px] border-b border-slate-800 pb-1 mb-1">Pricing Tiers</h5>
+                          <div className="flex justify-between gap-4">
+                            <span>Purchase Cost:</span>
+                            <span className="font-bold font-mono text-slate-200">₹{(prod.prices?.purchase || 0).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span>Retail Selling:</span>
+                            <span className="font-bold font-mono text-slate-200">₹{(prod.prices?.retail || prod.price || 0).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span>Shop Trade:</span>
+                            <span className="font-bold font-mono text-slate-200">₹{(prod.prices?.shop || 0).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span>School Trade:</span>
+                            <span className="font-bold font-mono text-slate-200">₹{(prod.prices?.school || 0).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span>Wholesale Rate:</span>
+                            <span className="font-bold font-mono text-slate-200">₹{(prod.prices?.wholesale || 0).toFixed(2)}</span>
+                          </div>
+                          {prod.prices?.dealer > 0 && (
+                            <div className="flex justify-between gap-4">
+                              <span>Dealer Rate:</span>
+                              <span className="font-bold font-mono text-slate-200">₹{parseFloat(prod.prices.dealer).toFixed(2)}</span>
+                            </div>
+                          )}
+                          
+                          {/* Dynamic Custom Prices */}
+                          {Object.keys(prod.prices || {}).map((k) => {
+                            const standardKeys = ["purchase", "retail", "shop", "school", "wholesale", "dealer"];
+                            if (!standardKeys.includes(k) && prod.prices[k] !== undefined) {
+                              return (
+                                <div key={k} className="flex justify-between gap-4 capitalize">
+                                  <span>{k}:</span>
+                                  <span className="font-bold font-mono text-slate-200">₹{parseFloat(prod.prices[k]).toFixed(2)}</span>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })}
+                        </div>
+                      </td>
                       <td className="py-4 px-2 text-right text-slate-400">{prod.gstRate}% GST</td>
                       <td className="py-4 px-2 text-center font-bold">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs
@@ -325,7 +445,7 @@ function ProductList() {
       {/* ADD PRODUCT MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl relative">
             <div className="bg-slate-950 px-6 py-4 flex items-center justify-between border-b border-slate-900">
               <h3 className="font-bold text-white flex items-center gap-2">
                 <FaBoxes className="text-orange-500" /> Add New Inventory Product
@@ -398,18 +518,134 @@ function ProductList() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-slate-400 font-semibold">Base Price (₹) *</label>
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    required
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2.5 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500"
-                  />
+              {/* Multiple Selling Prices grid */}
+              <div className="border-t border-slate-800/80 pt-3 mt-1">
+                <h4 className="text-orange-400 font-bold uppercase tracking-wider text-[9px] mb-2">Pricing Categories</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-semibold">Purchase Price *</label>
+                    <input 
+                      type="number" step="0.01" required
+                      value={formData.prices.purchase}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        prices: { ...formData.prices, purchase: e.target.value } 
+                      })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-100 focus:outline-none focus:border-orange-500 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-semibold">Retail Price *</label>
+                    <input 
+                      type="number" step="0.01" required
+                      value={formData.prices.retail}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        prices: { ...formData.prices, retail: e.target.value } 
+                      })}
+                      className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-semibold">Shop Price *</label>
+                    <input 
+                      type="number" step="0.01" required
+                      value={formData.prices.shop}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        prices: { ...formData.prices, shop: e.target.value } 
+                      })}
+                      className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-semibold">School Price *</label>
+                    <input 
+                      type="number" step="0.01" required
+                      value={formData.prices.school}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        prices: { ...formData.prices, school: e.target.value } 
+                      })}
+                      className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-semibold">Wholesale Price *</label>
+                    <input 
+                      type="number" step="0.01" required
+                      value={formData.prices.wholesale}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        prices: { ...formData.prices, wholesale: e.target.value } 
+                      })}
+                      className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-semibold">Dealer Price (Optional)</label>
+                    <input 
+                      type="number" step="0.01"
+                      value={formData.prices.dealer}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        prices: { ...formData.prices, dealer: e.target.value } 
+                      })}
+                      className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500 font-mono"
+                    />
+                  </div>
                 </div>
+              </div>
+
+              {/* Dynamic Custom prices */}
+              <div className="space-y-2 mt-1 pt-3 border-t border-slate-800/80">
+                <div className="flex justify-between items-center">
+                  <span className="text-orange-400 font-bold uppercase tracking-wider text-[9px]">Custom Price Categories</span>
+                  <button 
+                    type="button"
+                    onClick={() => setFormData({ ...formData, customPrices: [...formData.customPrices, { category: "", price: "" }] })}
+                    className="text-[10px] font-black text-amber-500 hover:text-amber-400"
+                  >
+                    + Add Category
+                  </button>
+                </div>
+                {formData.customPrices.map((cp, idx) => (
+                  <div key={idx} className="flex gap-2 items-center">
+                    <input 
+                      type="text" placeholder="e.g. VIP" required
+                      value={cp.category}
+                      onChange={(e) => {
+                        const newList = [...formData.customPrices];
+                        newList[idx].category = e.target.value;
+                        setFormData({ ...formData, customPrices: newList });
+                      }}
+                      className="flex-1 bg-slate-955 border border-slate-800 rounded-lg p-2 text-[11px] text-slate-100 focus:outline-none focus:border-orange-500 capitalize"
+                    />
+                    <input 
+                      type="number" step="0.01" placeholder="₹ Rate" required
+                      value={cp.price}
+                      onChange={(e) => {
+                        const newList = [...formData.customPrices];
+                        newList[idx].price = e.target.value;
+                        setFormData({ ...formData, customPrices: newList });
+                      }}
+                      className="w-24 bg-slate-955 border border-slate-800 rounded-lg p-2 text-[11px] text-slate-100 focus:outline-none focus:border-orange-500 font-mono text-right"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const newList = formData.customPrices.filter((_, i) => i !== idx);
+                        setFormData({ ...formData, customPrices: newList });
+                      }}
+                      className="p-2 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded border border-rose-500/20"
+                    >
+                      <FaTimes size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-slate-400 font-semibold">Stock Quantity *</label>
                   <input 
@@ -457,7 +693,7 @@ function ProductList() {
       {/* EDIT PRODUCT MODAL */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl relative">
             <div className="bg-slate-950 px-6 py-4 flex items-center justify-between border-b border-slate-900">
               <h3 className="font-bold text-white flex items-center gap-2">
                 <FaEdit className="text-orange-500" /> Edit Product Details
@@ -530,18 +766,134 @@ function ProductList() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-slate-400 font-semibold">Base Price (₹) *</label>
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    required
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2.5 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500"
-                  />
+              {/* Multiple Selling Prices grid */}
+              <div className="border-t border-slate-800/80 pt-3 mt-1">
+                <h4 className="text-orange-400 font-bold uppercase tracking-wider text-[9px] mb-2">Pricing Categories</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-semibold">Purchase Price *</label>
+                    <input 
+                      type="number" step="0.01" required
+                      value={formData.prices.purchase}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        prices: { ...formData.prices, purchase: e.target.value } 
+                      })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-100 focus:outline-none focus:border-orange-500 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-semibold">Retail Price *</label>
+                    <input 
+                      type="number" step="0.01" required
+                      value={formData.prices.retail}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        prices: { ...formData.prices, retail: e.target.value } 
+                      })}
+                      className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-semibold">Shop Price *</label>
+                    <input 
+                      type="number" step="0.01" required
+                      value={formData.prices.shop}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        prices: { ...formData.prices, shop: e.target.value } 
+                      })}
+                      className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-semibold">School Price *</label>
+                    <input 
+                      type="number" step="0.01" required
+                      value={formData.prices.school}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        prices: { ...formData.prices, school: e.target.value } 
+                      })}
+                      className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-semibold">Wholesale Price *</label>
+                    <input 
+                      type="number" step="0.01" required
+                      value={formData.prices.wholesale}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        prices: { ...formData.prices, wholesale: e.target.value } 
+                      })}
+                      className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-semibold">Dealer Price (Optional)</label>
+                    <input 
+                      type="number" step="0.01"
+                      value={formData.prices.dealer}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        prices: { ...formData.prices, dealer: e.target.value } 
+                      })}
+                      className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500 font-mono"
+                    />
+                  </div>
                 </div>
+              </div>
+
+              {/* Dynamic Custom prices */}
+              <div className="space-y-2 mt-1 pt-3 border-t border-slate-800/80">
+                <div className="flex justify-between items-center">
+                  <span className="text-orange-400 font-bold uppercase tracking-wider text-[9px]">Custom Price Categories</span>
+                  <button 
+                    type="button"
+                    onClick={() => setFormData({ ...formData, customPrices: [...formData.customPrices, { category: "", price: "" }] })}
+                    className="text-[10px] font-black text-amber-500 hover:text-amber-400"
+                  >
+                    + Add Category
+                  </button>
+                </div>
+                {formData.customPrices.map((cp, idx) => (
+                  <div key={idx} className="flex gap-2 items-center">
+                    <input 
+                      type="text" placeholder="e.g. VIP" required
+                      value={cp.category}
+                      onChange={(e) => {
+                        const newList = [...formData.customPrices];
+                        newList[idx].category = e.target.value;
+                        setFormData({ ...formData, customPrices: newList });
+                      }}
+                      className="flex-1 bg-slate-955 border border-slate-800 rounded-lg p-2 text-[11px] text-slate-100 focus:outline-none focus:border-orange-500 capitalize"
+                    />
+                    <input 
+                      type="number" step="0.01" placeholder="₹ Rate" required
+                      value={cp.price}
+                      onChange={(e) => {
+                        const newList = [...formData.customPrices];
+                        newList[idx].price = e.target.value;
+                        setFormData({ ...formData, customPrices: newList });
+                      }}
+                      className="w-24 bg-slate-955 border border-slate-800 rounded-lg p-2 text-[11px] text-slate-100 focus:outline-none focus:border-orange-500 font-mono text-right"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const newList = formData.customPrices.filter((_, i) => i !== idx);
+                        setFormData({ ...formData, customPrices: newList });
+                      }}
+                      className="p-2 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded border border-rose-500/20"
+                    >
+                      <FaTimes size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-slate-400 font-semibold">Stock Quantity *</label>
                   <input 

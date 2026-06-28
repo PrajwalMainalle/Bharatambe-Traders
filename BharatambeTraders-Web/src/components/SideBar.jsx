@@ -11,6 +11,7 @@ import {
   FaChartBar,
   FaCog,
   FaSignOutAlt,
+  FaUserFriends,
 } from "react-icons/fa";
 import { BsBoxSeamFill } from "react-icons/bs";
 
@@ -35,6 +36,7 @@ const SideBar = ({
     { name: "POS / New Bill", path: "/pos", icon: FaCalculator },
     { name: "Invoices History", path: "/invoices", icon: FaHistory },
     { name: "Inventory", path: "/inventory", icon: BsBoxSeamFill },
+    { name: "Customers", path: "/customers", icon: FaUserFriends },
     { name: "Reports", path: "/reports", icon: FaChartBar },
     { name: "Settings", path: "/settings", icon: FaCog },
   ];

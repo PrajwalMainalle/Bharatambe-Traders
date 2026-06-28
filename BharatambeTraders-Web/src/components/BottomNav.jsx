@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { FaThLarge, FaCalculator, FaHistory } from "react-icons/fa";
+import { FaThLarge, FaCalculator, FaHistory, FaUserFriends } from "react-icons/fa";
 import { BsBoxSeamFill } from "react-icons/bs";
 
 const BottomNav = () => {
@@ -8,6 +8,7 @@ const BottomNav = () => {
     { name: "POS", path: "/pos", icon: FaCalculator },
     { name: "Invoices", path: "/invoices", icon: FaHistory },
     { name: "Inventory", path: "/inventory", icon: BsBoxSeamFill },
+    { name: "Customers", path: "/customers", icon: FaUserFriends },
   ];
 
 

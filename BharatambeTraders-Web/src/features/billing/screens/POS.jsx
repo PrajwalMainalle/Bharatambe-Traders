@@ -7,12 +7,14 @@ import {
   addToCart, 
   removeFromCart, 
   updateCartQty, 
+  updateCartItemPrice,
   setCustomerInfo, 
   setPaymentMethod, 
   checkout,
   clearCart
 } from "../billingSlice";
 import { fetchProducts } from "../../inventory/inventorySlice";
+import { fetchCustomers, addCustomer } from "../../customers/customerSlice";
 import logo from "../../../assets/SLLogo.png";
 
 
@@ -21,7 +23,8 @@ function POS() {
   
   // Selectors
   const { products, loading: productsLoading } = useSelector((state) => state.inventory);
-  const { cart, customerName, customerPhone, paymentMethod, loading: checkoutLoading } = useSelector((state) => state.billing);
+  const { customers } = useSelector((state) => state.customers);
+  const { cart, customerName, customerPhone, customerType, priceCategory, paymentMethod, loading: checkoutLoading } = useSelector((state) => state.billing);
   const { user, token: authStoreToken } = useSelector((state) => state.auth);
 
   // Local state
@@ -29,6 +32,14 @@ function POS() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
+  
+  // Customer autocomplete states
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [showCustDropdown, setShowCustDropdown] = useState(false);
+  
+  // Quick Add Customer modal state
+  const [showAddCustModal, setShowAddCustModal] = useState(false);
+  const [newCustForm, setNewCustForm] = useState({ name: "", phone: "", customerType: "Retail", priceCategory: "retail" });
 
   // Manual Discount states
   const [discountType, setDiscountType] = useState("percent"); // "percent" | "fixed"
@@ -40,9 +51,10 @@ function POS() {
   const [orientation, setOrientation] = useState("portrait");
   const [isGstBilling, setIsGstBilling] = useState(false);
 
-  // Load products on mount
+  // Load products and customers on mount
   useEffect(() => {
     dispatch(fetchProducts());
+    dispatch(fetchCustomers());
   }, [dispatch]);
 
   // Categories list based on items
@@ -227,6 +239,57 @@ function POS() {
     return url ? `${url}&download=true` : "";
   };
 
+  const handleQuickAddCustomer = (e) => {
+    e.preventDefault();
+    if (!newCustForm.name || !newCustForm.phone) {
+      alert("Name and Phone are required.");
+      return;
+    }
+    dispatch(addCustomer(newCustForm)).then((res) => {
+      if (!res.error) {
+        const savedCust = res.payload;
+        dispatch(setCustomerInfo({
+          name: savedCust.name,
+          phone: savedCust.phone,
+          customerType: savedCust.customerType,
+          priceCategory: savedCust.priceCategory
+        }));
+        setCustomerSearch(savedCust.name);
+        setShowAddCustModal(false);
+        setNewCustForm({ name: "", phone: "", customerType: "Retail", priceCategory: "retail" });
+      } else {
+        alert(res.payload || "Failed to create customer");
+      }
+    });
+  };
+
+  const handleQuickAddCustTypeChange = (typeVal) => {
+    let categoryVal = "retail";
+    switch (typeVal) {
+      case "Retail":
+        categoryVal = "retail";
+        break;
+      case "Shop":
+        categoryVal = "shop";
+        break;
+      case "School":
+        categoryVal = "school";
+        break;
+      case "Wholesale":
+        categoryVal = "wholesale";
+        break;
+      case "Dealer":
+        categoryVal = "dealer";
+        break;
+      case "Distributor":
+        categoryVal = "distributor";
+        break;
+      default:
+        categoryVal = "retail";
+    }
+    setNewCustForm({ ...newCustForm, customerType: typeVal, priceCategory: categoryVal });
+  };
+
   const profile = user?.profile || {};
   const shopName = profile.shopName || user?.businessName || "SmartLedger";
   const address = profile.businessAddress || "N/A Address";
@@ -374,28 +437,96 @@ function POS() {
       <div className="w-full xl:w-96 bg-slate-900 border-t xl:border-t-0 xl:border-l border-slate-900 p-6 flex flex-col h-full overflow-y-auto space-y-6">
         
         {/* Customer logging */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-450 border-b border-slate-800 pb-2">Customer Details</h3>
-          <div className="grid grid-cols-1 gap-2">
-            <div className="relative">
-              <input 
-                type="text" 
-                placeholder="Walk-in Customer Name"
-                value={customerName}
-                onChange={(e) => dispatch(setCustomerInfo({ name: e.target.value, phone: customerPhone }))}
-                className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-orange-500"
-              />
-              <FaUser size={12} className="absolute left-3 top-3 text-slate-600" />
+        <div className="space-y-3 relative">
+          <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-450">Customer Details</h3>
+            <div className="flex gap-2">
+              <button 
+                type="button" 
+                onClick={() => setShowAddCustModal(true)}
+                className="text-[10px] text-orange-500 hover:text-orange-400 font-bold"
+              >
+                + Quick Add
+              </button>
+              {customerName && customerName !== "Walk-in Customer" && (
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setCustomerSearch("");
+                    dispatch(setCustomerInfo({ name: "Walk-in Customer", phone: "N/A", customerType: "Retail", priceCategory: "retail" }));
+                  }}
+                  className="text-[10px] text-rose-500 hover:text-rose-455 font-bold"
+                >
+                  Reset
+                </button>
+              )}
             </div>
-            <div className="relative">
-              <input 
-                type="text" 
-                placeholder="Phone Number (10 digits)"
-                value={customerPhone}
-                onChange={(e) => dispatch(setCustomerInfo({ name: customerName, phone: e.target.value }))}
-                className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-orange-500"
-              />
-              <FaPhoneAlt size={12} className="absolute left-3 top-3 text-slate-600" />
+          </div>
+          
+          <div className="relative">
+            <input 
+              type="text" 
+              placeholder="Search customers by name or phone..."
+              value={customerSearch}
+              onChange={(e) => {
+                setCustomerSearch(e.target.value);
+                setShowCustDropdown(true);
+              }}
+              onFocus={() => setShowCustDropdown(true)}
+              className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-orange-500"
+            />
+            <IoSearch size={12} className="absolute left-3 top-3 text-slate-600" />
+            
+            {showCustDropdown && customerSearch.trim() !== "" && (
+              <div className="absolute left-0 right-0 mt-1 z-30 bg-slate-900 border border-slate-800 rounded-lg max-h-48 overflow-y-auto shadow-2xl divide-y divide-slate-850">
+                {customers
+                  .filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase()) || c.phone.includes(customerSearch))
+                  .map(cust => (
+                    <div 
+                      key={cust._id}
+                      onClick={() => {
+                        dispatch(setCustomerInfo({
+                          name: cust.name,
+                          phone: cust.phone,
+                          customerType: cust.customerType,
+                          priceCategory: cust.priceCategory
+                        }));
+                        setCustomerSearch(cust.name);
+                        setShowCustDropdown(false);
+                      }}
+                      className="p-2 hover:bg-slate-800 cursor-pointer text-left text-xs text-slate-200"
+                    >
+                      <div className="font-semibold">{cust.name}</div>
+                      <div className="text-[10px] text-slate-500 flex justify-between mt-0.5">
+                        <span>📞 {cust.phone}</span>
+                        <span className="text-orange-400 font-semibold">{cust.customerType} ({cust.priceCategory})</span>
+                      </div>
+                    </div>
+                  ))
+                }
+                {customers.filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase()) || c.phone.includes(customerSearch)).length === 0 && (
+                  <div className="p-2 text-center text-slate-500 text-xs">No customer profiles found.</div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Current selected customer details panel */}
+          <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-900 space-y-1.5 text-xs">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Name:</span>
+              <span className="font-bold text-slate-205">{customerName || "Walk-in Customer"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Phone:</span>
+              <span className="font-mono text-slate-400">{customerPhone || "N/A"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Pricing Tier:</span>
+              <span className="font-bold text-orange-400 capitalize">
+                {priceCategory ? `${priceCategory} Price` : "Retail Price"}
+                <span className="text-[10px] text-slate-500 font-normal ml-1">({customerType || "Retail"})</span>
+              </span>
             </div>
           </div>
         </div>
@@ -414,8 +545,21 @@ function POS() {
                 <div key={item.id} className="py-2.5 flex flex-col justify-center text-xs gap-1.5 border-b border-slate-800/40">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-slate-200 truncate notranslate" translate="no">{item.name}</p>
-                      <p className="text-[9px] text-slate-500">₹{item.price.toFixed(2)} | GST: {item.gstRate}%</p>
+                      <p className="font-semibold text-slate-200 truncate notranslate text-left" translate="no">{item.name}</p>
+                      <div className="flex items-center gap-1 mt-0.5 text-[9px] text-slate-500">
+                        <span className="capitalize">{item.priceCategoryUsed || "retail"} Price: ₹</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={item.price}
+                          onChange={(e) => {
+                            const newPrice = parseFloat(e.target.value) || 0;
+                            dispatch(updateCartItemPrice({ id: item.id, price: newPrice }));
+                          }}
+                          className="w-16 h-5 bg-slate-950 border border-slate-700 rounded px-1 text-[10px] text-orange-400 font-bold focus:outline-none focus:border-orange-500 font-mono text-center"
+                        />
+                        <span>| GST: {item.gstRate}%</span>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -903,6 +1047,100 @@ function POS() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* QUICK ADD CUSTOMER MODAL */}
+      {showAddCustModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative">
+            <div className="bg-slate-950 px-5 py-3.5 flex items-center justify-between border-b border-slate-900">
+              <h3 className="font-bold text-white flex items-center gap-2 text-xs">
+                <FaUser size={12} className="text-orange-500" /> Quick Add Customer Profile
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => setShowAddCustModal(false)} 
+                className="text-slate-400 hover:text-slate-200"
+              >
+                <FaTimes size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickAddCustomer} className="p-5 space-y-3.5 text-xs">
+              <div className="space-y-1">
+                <label className="text-slate-400 font-semibold">Customer Name *</label>
+                <input 
+                  type="text" required
+                  placeholder="e.g. Acme Corp"
+                  value={newCustForm.name}
+                  onChange={(e) => setNewCustForm({ ...newCustForm, name: e.target.value })}
+                  className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 text-slate-100 focus:outline-none focus:border-orange-500 bg-slate-950"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-400 font-semibold">Phone Number *</label>
+                <input 
+                  type="text" required
+                  placeholder="10 digit number"
+                  value={newCustForm.phone}
+                  onChange={(e) => setNewCustForm({ ...newCustForm, phone: e.target.value })}
+                  className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 text-slate-100 focus:outline-none focus:border-orange-500 bg-slate-950"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-slate-400 font-semibold">Type</label>
+                  <select 
+                    value={newCustForm.customerType}
+                    onChange={(e) => handleQuickAddCustTypeChange(e.target.value)}
+                    className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500"
+                  >
+                    <option value="Retail">Retail</option>
+                    <option value="Shop">Shop</option>
+                    <option value="School">School</option>
+                    <option value="Wholesale">Wholesale</option>
+                    <option value="Dealer">Dealer</option>
+                    <option value="Distributor">Distributor</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-slate-400 font-semibold">Price Category</label>
+                  <select 
+                    value={newCustForm.priceCategory}
+                    onChange={(e) => setNewCustForm({ ...newCustForm, priceCategory: e.target.value })}
+                    className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500 capitalize"
+                  >
+                    <option value="retail">retail price</option>
+                    <option value="shop">shop price</option>
+                    <option value="school">school price</option>
+                    <option value="wholesale">wholesale price</option>
+                    <option value="dealer">dealer price</option>
+                    <option value="distributor">distributor price</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-3 flex gap-2.5 border-t border-slate-900">
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddCustModal(false)}
+                  className="flex-1 py-2 bg-slate-850 hover:bg-slate-850 text-slate-350 hover:text-white border border-slate-800 rounded-xl font-bold"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl font-bold"
+                >
+                  Save &amp; Select
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

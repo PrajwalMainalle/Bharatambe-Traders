@@ -1,6 +1,7 @@
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const QRCode = require("qrcode");
 
 const drawPageDecorations = (doc, pageNum) => {
   // Save bottom margin to prevent auto page break
@@ -161,8 +162,18 @@ const drawTableHeaders = (doc, startY) => {
 };
 
 const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     try {
+      const hasGst = invoice.isGstBilling !== false;
+      let qrBuffer = null;
+      if (!hasGst) {
+        try {
+          const upiString = `upi://pay?pa=6361037157@ybl&pn=Bharatambe%20Traders&cu=INR&am=${invoice.total.toFixed(2)}`;
+          qrBuffer = await QRCode.toBuffer(upiString, { width: 120, margin: 1 });
+        } catch (qrErr) {
+          console.error("Failed to generate QR Code for invoice PDF:", qrErr);
+        }
+      }
       // Determine page size and orientation
       let size = "A4";
       let layout = options.orientation || "portrait";
@@ -278,7 +289,6 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
 
       // summary parameters
       const discountAmount = invoice.discountAmount || 0;
-      const hasGst = invoice.isGstBilling !== false;
 
       // Calculate height needed for calculations column
       let calcRowsHeight = 0;
@@ -335,15 +345,35 @@ const generateInvoicePDF = (invoice, tenant, target, options = {}) => {
       doc.moveTo(col5X, currentY + 20).lineTo(col5X, currentY + summaryHeight).stroke(borderColor);
 
       const bankDetailsY = currentY + 25;
-      doc.fillColor("#b91c1c").font(fontBold).fontSize(8);
-      doc.text("BANK ACCOUNT DETAILS:", margin + 8, bankDetailsY);
-      
-      doc.fillColor("#0f172a").font(fontRegular).fontSize(7.5);
-      const profile = tenant.profile || {};
-      const shopNameStr = (profile.shopName || tenant.businessName || "SmartLedger").toUpperCase();
-      doc.text(`Account Name:  ${shopNameStr}`, margin + 8, bankDetailsY + 11, { width: col3X - margin - 16 });
-      doc.text("Bank Name:      CANARA BANK, BASAVAKALYAN BRANCH", margin + 8, bankDetailsY + 20, { width: col3X - margin - 16 });
-      doc.text("A/C Number:     120033287950  |  IFSC Code: CNRB0010700", margin + 8, bankDetailsY + 29, { width: col3X - margin - 16 });
+      if (hasGst) {
+        doc.fillColor("#b91c1c").font(fontBold).fontSize(8);
+        doc.text("BANK ACCOUNT DETAILS:", margin + 8, bankDetailsY);
+        
+        doc.fillColor("#0f172a").font(fontRegular).fontSize(7.5);
+        const profile = tenant.profile || {};
+        const shopNameStr = (profile.shopName || tenant.businessName || "SmartLedger").toUpperCase();
+        doc.text(`Account Name:  ${shopNameStr}`, margin + 8, bankDetailsY + 11, { width: col3X - margin - 16 });
+        doc.text("Bank Name:      CANARA BANK, BASAVAKALYAN BRANCH", margin + 8, bankDetailsY + 20, { width: col3X - margin - 16 });
+        doc.text("A/C Number:     120033287950  |  IFSC Code: CNRB0010700", margin + 8, bankDetailsY + 29, { width: col3X - margin - 16 });
+      } else {
+        doc.fillColor("#b91c1c").font(fontBold).fontSize(8);
+        doc.text("SCAN & PAY (UPI):", margin + 8, bankDetailsY - 2);
+        
+        if (qrBuffer) {
+          try {
+            doc.image(qrBuffer, margin + 8, bankDetailsY + 8, { width: 42, height: 42 });
+          } catch (imgErr) {
+            console.error("Failed to embed QR code image in PDF:", imgErr);
+          }
+        }
+        
+        doc.fillColor("#0f172a").font(fontBold).fontSize(7.5);
+        doc.text("BHARATAMBE TRADERS", margin + 56, bankDetailsY + 10);
+        doc.font(fontRegular).fontSize(7);
+        doc.text("Mobile: 6361037157", margin + 56, bankDetailsY + 18);
+        doc.text(`Amount: ₹${invoice.total.toFixed(2)}`, margin + 56, bankDetailsY + 26);
+        doc.fillColor("#64748b").fontSize(6.5).text("Scan with GPay/PhonePe/Paytm", margin + 56, bankDetailsY + 34);
+      }
 
       // Calculations right column
       let calcY = currentY + 20;

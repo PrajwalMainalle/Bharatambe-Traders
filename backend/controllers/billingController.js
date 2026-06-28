@@ -22,36 +22,29 @@ const getInvoices = async (req, res) => {
 // @route   POST /api/billing
 // @access  Private
 const createInvoice = async (req, res) => {
-  const { customerName, customerPhone, items, discountType, discountValue, discountPercent, paymentMethod, isQuotation, isGstBilling } = req.body;
+  const { customerName, customerPhone, customerType, items, discountType, discountValue, discountPercent, paymentMethod, isQuotation, isGstBilling } = req.body;
 
   if (!items || items.length === 0) {
     return res.status(400).json({ message: "No items provided in cart" });
   }
 
   try {
-    // 1. Verify stock availability first (only for finalized tax invoices)
+    // 1. Verify stock availability first & cache products for cost calculations
     const checkedItems = [];
-    if (!isQuotation) {
-      for (const cartItem of items) {
-        const product = await Product.findOne({ _id: cartItem.id || cartItem.productId, tenantId: req.user._id });
-        if (!product) {
-          return res.status(404).json({ message: `Product '${cartItem.name}' not found in inventory` });
-        }
-        if (product.stock < cartItem.qty) {
-          return res.status(400).json({
-            message: `Insufficient stock for product '${product.name}'. Required: ${cartItem.qty}, Available: ${product.stock}`
-          });
-        }
-        checkedItems.push({ product, qty: cartItem.qty });
+    const productsMap = {};
+    for (const cartItem of items) {
+      const pId = cartItem.id || cartItem.productId;
+      const product = await Product.findOne({ _id: pId, tenantId: req.user._id });
+      if (!product) {
+        return res.status(404).json({ message: `Product '${cartItem.name}' not found in inventory` });
       }
-    } else {
-      // For quotations, just verify the product exists
-      for (const cartItem of items) {
-        const product = await Product.findOne({ _id: cartItem.id || cartItem.productId, tenantId: req.user._id });
-        if (!product) {
-          return res.status(404).json({ message: `Product '${cartItem.name}' not found in inventory` });
-        }
+      if (!isQuotation && product.stock < cartItem.qty) {
+        return res.status(400).json({
+          message: `Insufficient stock for product '${product.name}'. Required: ${cartItem.qty}, Available: ${product.stock}`
+        });
       }
+      checkedItems.push({ product, qty: cartItem.qty });
+      productsMap[pId] = product;
     }
 
     // 2. Compute Invoice Totals
@@ -59,12 +52,17 @@ const createInvoice = async (req, res) => {
     const invoiceItems = [];
 
     items.forEach((item) => {
+      const pId = item.id || item.productId;
+      const productDoc = productsMap[pId];
+      const purchasePrice = productDoc && productDoc.prices ? (productDoc.prices.get("purchase") || 0) : 0;
       const itemSubtotal = item.price * item.qty;
       subtotal += itemSubtotal;
       invoiceItems.push({
-        productId: item.id || item.productId,
+        productId: pId,
         name: item.name,
         price: item.price,
+        purchasePrice: purchasePrice,
+        priceCategoryUsed: item.priceCategoryUsed || "retail",
         qty: item.qty,
         gstRate: item.gstRate || 0,
         sku: item.sku,
@@ -120,6 +118,7 @@ const createInvoice = async (req, res) => {
       invoiceId,
       customerName: customerName || "Walk-in Customer",
       customerPhone: customerPhone || "N/A",
+      customerType: customerType || "Retail",
       items: invoiceItems,
       subtotal,
       discountPercent: discPercent,

@@ -14,6 +14,15 @@ const InvoiceItemSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  purchasePrice: {
+    type: Number,
+    required: true,
+    default: 0.0,
+  },
+  priceCategoryUsed: {
+    type: String,
+    default: "retail",
+  },
   qty: {
     type: Number,
     required: true,
@@ -52,6 +61,10 @@ const InvoiceSchema = new mongoose.Schema(
     customerPhone: {
       type: String,
       default: "N/A",
+    },
+    customerType: {
+      type: String,
+      default: "Retail",
     },
     items: [InvoiceItemSchema],
     subtotal: {

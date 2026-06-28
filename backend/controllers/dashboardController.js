@@ -155,6 +155,31 @@ const getDashboardSummary = async (req, res) => {
     // Product Catalog Report
     const productReport = Object.values(productSalesMap).sort((a, b) => b.revenue - a.revenue);
 
+    // Detailed Multi-Price Sales Report
+    const salesDetailsReport = [];
+    paidInvoices.forEach((inv) => {
+      const discountRatio = inv.subtotal > 0 ? (inv.subtotal - inv.discountAmount) / inv.subtotal : 1;
+      inv.items.forEach((item) => {
+        const itemSubtotal = item.price * item.qty;
+        const discountedSubtotal = itemSubtotal * discountRatio;
+        const purchaseCost = (item.purchasePrice || 0) * item.qty;
+        const profit = discountedSubtotal - purchaseCost;
+        
+        salesDetailsReport.push({
+          customerName: inv.customerName,
+          customerType: inv.customerType || "Retail",
+          productName: item.name,
+          sku: item.sku,
+          priceCategoryUsed: item.priceCategoryUsed || "retail",
+          sellingPriceUsed: item.price,
+          qty: item.qty,
+          totalAmount: discountedSubtotal,
+          profit: profit,
+          date: inv.date,
+        });
+      });
+    });
+
     res.json({
       kpis: {
         totalSales,
@@ -174,6 +199,7 @@ const getDashboardSummary = async (req, res) => {
         customerReport,
         productReport,
         gstReport,
+        salesDetailsReport,
       },
     });
 

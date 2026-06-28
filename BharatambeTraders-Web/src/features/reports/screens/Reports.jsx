@@ -97,6 +97,7 @@ function Reports() {
           { id: "products", label: "Product Performance", icon: FaBoxes },
           { id: "customers", label: "Customer Rankings", icon: FaUserFriends },
           { id: "gst", label: "GST Summary Reports", icon: FaPercent },
+          { id: "detailedSales", label: "Multi-Price Sales Log", icon: FaFileCsv },
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -354,6 +355,81 @@ function Reports() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* T5: DETAILED MULTI-PRICE SALES LOG */}
+        {activeTab === "detailedSales" && reportData && reportData.salesDetailsReport && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center print:hidden">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Multi-Price Sales &amp; Profit Log</h3>
+              <button
+                onClick={() => exportToCSV(
+                  reportData.salesDetailsReport, 
+                  ["Customer Name", "Customer Type", "Product Name", "SKU", "Price Category Used", "Selling Price Used", "Quantity", "Total Amount", "Profit", "Date"], 
+                  "multiprice_sales_profit_report"
+                )}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/20 rounded-lg text-xs font-semibold"
+              >
+                <FaFileCsv /> Export to Excel
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs md:text-sm">
+                <thead>
+                  <tr className="border-b border-slate-900 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                    <th className="py-2.5 px-4">Date</th>
+                    <th className="py-2.5 px-2">Customer Details</th>
+                    <th className="py-2.5 px-2">Item Name</th>
+                    <th className="py-2.5 px-2">Price Tier Used</th>
+                    <th className="py-2.5 px-2 text-right">Selling Price</th>
+                    <th className="py-2.5 px-2 text-center">Qty</th>
+                    <th className="py-2.5 px-2 text-right">Subtotal</th>
+                    <th className="py-2.5 px-4 text-right">Profit Generated</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-900/40 text-slate-350">
+                  {reportData.salesDetailsReport.map((row, idx) => {
+                    const rowDate = row.date ? new Date(row.date).toLocaleDateString("en-IN") : "N/A";
+                    return (
+                      <tr key={idx} className="hover:bg-slate-900/10 transition-colors">
+                        <td className="py-3 px-4 font-mono">{rowDate}</td>
+                        <td className="py-3 px-2">
+                          <div className="font-semibold text-slate-200">{row.customerName}</div>
+                          <div className="text-[10px] text-slate-500">{row.customerType}</div>
+                        </td>
+                        <td className="py-3 px-2">
+                          <div className="font-semibold text-slate-200 notranslate" translate="no">{row.productName}</div>
+                          <div className="text-[10px] font-mono text-slate-500">{row.sku}</div>
+                        </td>
+                        <td className="py-3 px-2 capitalize">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold
+                            ${row.priceCategoryUsed === "manual" 
+                              ? "bg-amber-500/10 text-amber-500 border border-amber-500/10" 
+                              : "bg-slate-800 text-slate-400"
+                            }
+                          `}>
+                            {row.priceCategoryUsed}
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 text-right font-mono font-bold text-slate-100">₹{row.sellingPriceUsed.toFixed(2)}</td>
+                        <td className="py-3 px-2 text-center font-bold text-slate-100">{row.qty}</td>
+                        <td className="py-3 px-2 text-right font-mono font-semibold text-slate-200">₹{row.totalAmount.toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right font-mono font-black text-emerald-450">
+                          {row.profit >= 0 ? `₹${row.profit.toFixed(2)}` : `-₹${Math.abs(row.profit).toFixed(2)}`}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {reportData.salesDetailsReport.length === 0 && (
+                    <tr>
+                      <td colSpan="8" className="py-8 text-center text-slate-500">No multi-price item sales compiled yet.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

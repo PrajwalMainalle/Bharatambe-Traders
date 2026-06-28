@@ -8,6 +8,7 @@ import InvoiceListPage from "../features/billing/screens/InvoiceList";
 import ProductListPage from "../features/inventory/screens/ProductList";
 import ReportsPage from "../features/reports/screens/Reports";
 import SettingsPage from "../features/profile/screens/Settings";
+import CustomerListPage from "../features/customers/screens/CustomerList";
 import ProtectedRoute from "./ProtectedRoute";
 
 const AppRoutes = () => {
@@ -27,6 +28,7 @@ const AppRoutes = () => {
             <Route path="/pos" element={<POSPage />} />
             <Route path="/invoices" element={<InvoiceListPage />} />
             <Route path="/inventory" element={<ProductListPage />} />
+            <Route path="/customers" element={<CustomerListPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>

@@ -32,6 +32,11 @@ const ProductSchema = new mongoose.Schema(
       required: true,
       default: 0.0,
     },
+    prices: {
+      type: Map,
+      of: Number,
+      default: {},
+    },
     gstRate: {
       type: Number,
       required: true,
