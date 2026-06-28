@@ -121,6 +121,25 @@ const billingSlice = createSlice({
         }
       }
     },
+    addManualItem: (state, action) => {
+      // payload: { name, price, qty, gstRate }
+      const { name, price, qty, gstRate } = action.payload;
+      const tempId = `manual_${Date.now()}`;
+      state.cart.push({
+        id: tempId,
+        productId: null,
+        name: name,
+        originalPrice: parseFloat(price) || 0,
+        prices: { retail: parseFloat(price) || 0 },
+        price: parseFloat(price) || 0,
+        priceCategoryUsed: "manual",
+        gstRate: parseInt(gstRate, 10) || 0,
+        sku: "MANUAL",
+        qty: parseInt(qty, 10) || 1,
+        maxStock: 999999,
+        isManualItem: true,
+      });
+    },
     removeFromCart: (state, action) => {
       // payload: product id
       state.cart = state.cart.filter(item => (item.id !== action.payload && item.productId !== action.payload));
@@ -274,6 +293,7 @@ export const {
   removeFromCart,
   updateCartQty,
   updateCartItemPrice,
+  addManualItem,
   setCustomerInfo,
   setPaymentMethod,
   setDiscount,

@@ -33,6 +33,9 @@ const createInvoice = async (req, res) => {
     const checkedItems = [];
     const productsMap = {};
     for (const cartItem of items) {
+      if (cartItem.isManualItem) {
+        continue;
+      }
       const pId = cartItem.id || cartItem.productId;
       const product = await Product.findOne({ _id: pId, tenantId: req.user._id });
       if (!product) {
@@ -52,21 +55,37 @@ const createInvoice = async (req, res) => {
     const invoiceItems = [];
 
     items.forEach((item) => {
-      const pId = item.id || item.productId;
-      const productDoc = productsMap[pId];
-      const purchasePrice = productDoc && productDoc.prices ? (productDoc.prices.get("purchase") || 0) : 0;
       const itemSubtotal = item.price * item.qty;
       subtotal += itemSubtotal;
-      invoiceItems.push({
-        productId: pId,
-        name: item.name,
-        price: item.price,
-        purchasePrice: purchasePrice,
-        priceCategoryUsed: item.priceCategoryUsed || "retail",
-        qty: item.qty,
-        gstRate: item.gstRate || 0,
-        sku: item.sku,
-      });
+
+      if (item.isManualItem) {
+        invoiceItems.push({
+          productId: null,
+          name: item.name,
+          price: item.price,
+          purchasePrice: 0,
+          priceCategoryUsed: "manual",
+          qty: item.qty,
+          gstRate: item.gstRate || 0,
+          sku: "MANUAL",
+          isManualItem: true,
+        });
+      } else {
+        const pId = item.id || item.productId;
+        const productDoc = productsMap[pId];
+        const purchasePrice = productDoc && productDoc.prices ? (productDoc.prices.get("purchase") || 0) : 0;
+        invoiceItems.push({
+          productId: pId,
+          name: item.name,
+          price: item.price,
+          purchasePrice: purchasePrice,
+          priceCategoryUsed: item.priceCategoryUsed || "retail",
+          qty: item.qty,
+          gstRate: item.gstRate || 0,
+          sku: item.sku,
+          isManualItem: false,
+        });
+      }
     });
 
     let discountAmount = 0;
@@ -167,6 +186,9 @@ const refundInvoice = async (req, res) => {
     // Restock the items back to inventory (only if not a quotation)
     if (!invoice.isQuotation) {
       for (const item of invoice.items) {
+        if (item.isManualItem) {
+          continue;
+        }
         const product = await Product.findOne({ _id: item.productId, tenantId: req.user._id });
         if (product) {
           product.stock += item.qty;
@@ -208,6 +230,9 @@ const convertQuotationToSale = async (req, res) => {
     // 1. Verify stock availability for all items in the quotation
     const checkedItems = [];
     for (const item of invoice.items) {
+      if (item.isManualItem) {
+        continue;
+      }
       const product = await Product.findOne({ _id: item.productId, tenantId: req.user._id });
       if (!product) {
         return res.status(404).json({ message: `Product '${item.name}' not found in inventory` });

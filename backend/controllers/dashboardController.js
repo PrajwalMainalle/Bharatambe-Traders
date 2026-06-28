@@ -176,6 +176,7 @@ const getDashboardSummary = async (req, res) => {
           totalAmount: discountedSubtotal,
           profit: profit,
           date: inv.date,
+          isManualItem: item.isManualItem || false,
         });
       });
     });

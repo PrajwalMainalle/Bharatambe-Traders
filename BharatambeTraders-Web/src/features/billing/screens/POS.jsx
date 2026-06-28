@@ -8,6 +8,7 @@ import {
   removeFromCart, 
   updateCartQty, 
   updateCartItemPrice,
+  addManualItem,
   setCustomerInfo, 
   setPaymentMethod, 
   checkout,
@@ -40,6 +41,10 @@ function POS() {
   // Quick Add Customer modal state
   const [showAddCustModal, setShowAddCustModal] = useState(false);
   const [newCustForm, setNewCustForm] = useState({ name: "", phone: "", customerType: "Retail", priceCategory: "retail" });
+
+  // Manual Item modal state
+  const [showAddManualModal, setShowAddManualModal] = useState(false);
+  const [manualItemForm, setManualItemForm] = useState({ name: "", price: "", qty: 1, gstRate: 0 });
 
   // Manual Discount states
   const [discountType, setDiscountType] = useState("percent"); // "percent" | "fixed"
@@ -290,6 +295,17 @@ function POS() {
     setNewCustForm({ ...newCustForm, customerType: typeVal, priceCategory: categoryVal });
   };
 
+  const handleAddManualItemSubmit = (e) => {
+    e.preventDefault();
+    if (!manualItemForm.name || !manualItemForm.price) {
+      alert("Name and Price are required.");
+      return;
+    }
+    dispatch(addManualItem(manualItemForm));
+    setShowAddManualModal(false);
+    setManualItemForm({ name: "", price: "", qty: 1, gstRate: 0 });
+  };
+
   const profile = user?.profile || {};
   const shopName = profile.shopName || user?.businessName || "SmartLedger";
   const address = profile.businessAddress || "N/A Address";
@@ -331,8 +347,17 @@ function POS() {
             </div>
           </div>
 
-          <div className="text-xs text-slate-550 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-900">
-            Scanner Port: <span className="text-emerald-450 font-bold">ACTIVE</span>
+          <div className="flex items-center gap-3">
+            <button 
+              type="button"
+              onClick={() => setShowAddManualModal(true)}
+              className="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-orange-500/10"
+            >
+              + Custom Item
+            </button>
+            <div className="text-xs text-slate-550 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-900">
+              Scanner Port: <span className="text-emerald-450 font-bold">ACTIVE</span>
+            </div>
           </div>
         </div>
 
@@ -545,7 +570,14 @@ function POS() {
                 <div key={item.id} className="py-2.5 flex flex-col justify-center text-xs gap-1.5 border-b border-slate-800/40">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-slate-200 truncate notranslate text-left" translate="no">{item.name}</p>
+                      <p className="font-semibold text-slate-200 truncate notranslate text-left flex items-center gap-1.5" translate="no">
+                        {item.name}
+                        {item.isManualItem && (
+                          <span className="px-1.5 py-0.2 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded text-[8px] font-black uppercase tracking-wider">
+                            Manual
+                          </span>
+                        )}
+                      </p>
                       <div className="flex items-center gap-1 mt-0.5 text-[9px] text-slate-500">
                         <span className="capitalize">{item.priceCategoryUsed || "retail"} Price: ₹</span>
                         <input
@@ -1047,6 +1079,91 @@ function POS() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* ADD MANUAL/CUSTOM ITEM MODAL */}
+      {showAddManualModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative">
+            <div className="bg-slate-950 px-5 py-3.5 flex items-center justify-between border-b border-slate-900">
+              <h3 className="font-bold text-white flex items-center gap-2 text-xs">
+                <span className="text-orange-500 font-extrabold">+</span> Add Custom Ad-hoc Item
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => setShowAddManualModal(false)} 
+                className="text-slate-400 hover:text-slate-200"
+              >
+                <FaTimes size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddManualItemSubmit} className="p-5 space-y-3.5 text-xs">
+              <div className="space-y-1">
+                <label className="text-slate-400 font-semibold">Item Name / Description *</label>
+                <input 
+                  type="text" required
+                  placeholder="e.g. Cable Wire 2m"
+                  value={manualItemForm.name}
+                  onChange={(e) => setManualItemForm({ ...manualItemForm, name: e.target.value })}
+                  className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 text-slate-100 focus:outline-none focus:border-orange-500 bg-slate-950"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-slate-400 font-semibold">Unit Price (₹) *</label>
+                  <input 
+                    type="number" required step="0.01" min="0.01"
+                    placeholder="Rate"
+                    value={manualItemForm.price}
+                    onChange={(e) => setManualItemForm({ ...manualItemForm, price: e.target.value })}
+                    className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 text-slate-100 focus:outline-none focus:border-orange-500 bg-slate-950 font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-slate-400 font-semibold">Quantity *</label>
+                  <input 
+                    type="number" required min="1"
+                    value={manualItemForm.qty}
+                    onChange={(e) => setManualItemForm({ ...manualItemForm, qty: e.target.value })}
+                    className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 text-slate-100 focus:outline-none focus:border-orange-500 bg-slate-950 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-400 font-semibold">GST Rate (%)</label>
+                <select 
+                  value={manualItemForm.gstRate}
+                  onChange={(e) => setManualItemForm({ ...manualItemForm, gstRate: e.target.value })}
+                  className="w-full bg-slate-955 border border-slate-800 rounded-lg p-2 bg-slate-950 text-slate-100 focus:outline-none focus:border-orange-500"
+                >
+                  <option value="0">0% (Exempt)</option>
+                  <option value="5">5% GST</option>
+                  <option value="12">12% GST</option>
+                  <option value="18">18% GST</option>
+                </select>
+              </div>
+
+              <div className="pt-3 flex gap-2.5 border-t border-slate-900">
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddManualModal(false)}
+                  className="flex-1 py-2 bg-slate-850 hover:bg-slate-850 text-slate-350 hover:text-white border border-slate-800 rounded-xl font-bold"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl font-bold"
+                >
+                  Add to Bill
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

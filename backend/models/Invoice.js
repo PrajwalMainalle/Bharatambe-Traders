@@ -4,7 +4,7 @@ const InvoiceItemSchema = new mongoose.Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
-    required: true,
+    required: false,
   },
   name: {
     type: String,
@@ -34,7 +34,11 @@ const InvoiceItemSchema = new mongoose.Schema({
   },
   sku: {
     type: String,
-    required: true,
+    required: false,
+  },
+  isManualItem: {
+    type: Boolean,
+    default: false,
   },
 });
 
