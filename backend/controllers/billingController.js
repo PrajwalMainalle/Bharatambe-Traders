@@ -331,6 +331,105 @@ const settleInvoice = async (req, res) => {
   }
 };
 
+// @desc    Reset all business transactional data
+// @route   POST /api/billing/reset-business-data
+// @access  Private (Super Admin / Business Owner only)
+const resetBusinessData = async (req, res) => {
+  const mongoose = require("mongoose");
+  try {
+    const tenantId = req.user._id;
+
+    // 1. Create a complete database backup automatically
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const backupDir = path.join(__dirname, "..", "backups");
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+
+    const backupFilePath = path.join(backupDir, `backup_${timestamp}.json`);
+
+    // Fetch all documents from all relevant collections
+    const collectionsToBackup = ["users", "products", "customers", "invoices"];
+    const backupData = {
+      timestamp: new Date(),
+      tenantId: tenantId,
+      ownerEmail: req.user.email,
+      collections: {}
+    };
+
+    for (const colName of collectionsToBackup) {
+      const documents = await mongoose.connection.db.collection(colName).find({}).toArray();
+      backupData.collections[colName] = documents;
+    }
+
+    fs.writeFileSync(backupFilePath, JSON.stringify(backupData, null, 2), "utf-8");
+    console.log(`Database backup saved successfully at: ${backupFilePath}`);
+
+    // 2. Log the reset event with timestamp and Business Owner information (System audit log)
+    const logDir = path.join(__dirname, "..", "logs");
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    const logFilePath = path.join(logDir, "reset_audit.log");
+    const logEntry = `[${new Date().toISOString()}] RESET BUSINESS DATA - Owner: ${req.user.ownerName} (${req.user.email}), Shop: ${req.user.profile?.shopName || req.user.businessName}, TenantID: ${tenantId}. Backup saved to: ${backupFilePath}\n`;
+    fs.appendFileSync(logFilePath, logEntry, "utf-8");
+
+    // 3. Delete all related MongoDB transactional collections safely for this tenant
+    // Use MongoDB transaction where applicable (with sequential fallback)
+    let deletedCount = 0;
+    const session = await mongoose.startSession();
+    try {
+      session.startTransaction();
+      
+      const deleteResult = await Invoice.deleteMany({ tenantId }, { session });
+      deletedCount = deleteResult.deletedCount;
+
+      await session.commitTransaction();
+    } catch (transactionError) {
+      await session.abortTransaction();
+      console.warn("MongoDB Transaction failed or not supported, falling back to sequential delete:", transactionError.message);
+      
+      const deleteResult = await Invoice.deleteMany({ tenantId });
+      deletedCount = deleteResult.deletedCount;
+    } finally {
+      session.endSession();
+    }
+
+    // 4. Delete the stored invoice PDFs on disk for this tenant
+    const invoicesUploadDir = path.join(__dirname, "..", "uploads", "invoices");
+    if (fs.existsSync(invoicesUploadDir)) {
+      const files = fs.readdirSync(invoicesUploadDir);
+      const prefix = `${tenantId}_`;
+      let pdfDeletedCount = 0;
+      files.forEach((file) => {
+        if (file.startsWith(prefix) && file.endsWith(".pdf")) {
+          try {
+            fs.unlinkSync(path.join(invoicesUploadDir, file));
+            pdfDeletedCount++;
+          } catch (err) {
+            console.error(`Failed to delete invoice PDF: ${file}`, err);
+          }
+        }
+      });
+      console.log(`Deleted ${pdfDeletedCount} invoice PDF files on disk.`);
+    }
+
+    res.json({
+      success: true,
+      message: "Business transactional data has been successfully reset.",
+      invoicesDeleted: deletedCount,
+      backupFile: `backup_${timestamp}.json`
+    });
+
+  } catch (error) {
+    console.error("Error resetting business data:", error);
+    res.status(500).json({
+      message: "Server error resetting business data",
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getInvoices,
   createInvoice,
@@ -338,4 +437,5 @@ module.exports = {
   convertQuotationToSale,
   streamInvoicePDF,
   settleInvoice,
+  resetBusinessData,
 };
