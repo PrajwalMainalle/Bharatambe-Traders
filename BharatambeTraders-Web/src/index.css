@@ -2,6 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Color themes definition */
+:root {
+  /* Light Theme (Default / Day) */
+  --color-slate-950: 255 255 255; /* pure white */
+  --color-slate-900: 248 250 252; /* slate-50 */
+  --color-slate-850: 241 245 249; /* slate-100 */
+  --color-slate-800: 226 232 240; /* slate-200 */
+  --color-slate-750: 203 213 225; /* slate-300 */
+  --color-slate-700: 148 163 184; /* slate-400 */
+  --color-slate-600: 71 85 105;   /* slate-600 */
+  --color-slate-500: 100 116 139; /* slate-500 */
+  --color-slate-400: 51 65 85;    /* slate-800 */
+  --color-slate-300: 30 41 59;    /* slate-900 */
+  --color-slate-200: 15 23 42;    /* slate-900 */
+  --color-slate-100: 2 6 23;      /* slate-950 */
+
+  --color-sidebar-bg: 255 255 255;
+  --color-sidebar-active: 241 245 249;
+  --color-sidebar-border: 226 232 240;
+  --color-sidebar-text: 15 23 42;
+  --color-sidebar-subtext: 100 116 139;
+
+  --color-bottomnav-bg: 255 255 255;
+  --color-bottomnav-border: 226 232 240;
+
+  --color-layout-bg: 241 245 249;
+}
+
+.dark {
+  /* Dark Theme (Night) */
+  --color-slate-950: 2 6 23;      /* slate-950 */
+  --color-slate-900: 15 23 42;    /* slate-900 */
+  --color-slate-850: 30 41 59;    /* slate-800 (custom) */
+  --color-slate-800: 30 41 59;    /* slate-800 */
+  --color-slate-750: 51 65 85;    /* slate-700 (custom) */
+  --color-slate-700: 51 65 85;    /* slate-700 */
+  --color-slate-600: 71 85 105;   /* slate-600 */
+  --color-slate-500: 100 116 139; /* slate-500 */
+  --color-slate-400: 148 163 184; /* slate-400 */
+  --color-slate-300: 203 213 225; /* slate-300 */
+  --color-slate-200: 226 232 240; /* slate-200 */
+  --color-slate-100: 241 245 249; /* slate-100 */
+
+  --color-sidebar-bg: 11 19 43;   /* #0B132B */
+  --color-sidebar-active: 31 43 70; /* #1f2b46 */
+  --color-sidebar-border: 55 65 81; /* gray-700 */
+  --color-sidebar-text: 255 255 255;
+  --color-sidebar-subtext: 156 163 175; /* gray-400 */
+
+  --color-bottomnav-bg: 11 19 43;   /* #0B132B */
+  --color-bottomnav-border: 28 37 65; /* #1C2541 */
+
+  --color-layout-bg: 17 24 39;    /* bg-gray-900 */
+}
+
+/* Theme transitions */
+body, body * {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 250ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
 /* Custom Traditional Invoice Preview and Print Styles */
 .print-receipt {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;

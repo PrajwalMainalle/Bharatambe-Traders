@@ -17,6 +17,7 @@ import {
 import { fetchProducts } from "../../inventory/inventorySlice";
 import { fetchCustomers, addCustomer } from "../../customers/customerSlice";
 import logo from "../../../assets/SLLogo.png";
+import LoadingOverlay from "../../../components/LoadingOverlay";
 
 
 function POS() {
@@ -322,14 +323,7 @@ function POS() {
   return (
     <div className="flex flex-col xl:flex-row gap-6 bg-slate-950 text-slate-100 min-h-screen xl:min-h-0 xl:h-[calc(100vh-96px)] rounded-2xl border border-slate-900 overflow-hidden relative">
       
-      {checkoutLoading && (
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-30">
-          <div className="flex flex-col items-center gap-3 text-sm text-slate-350">
-            <FaSpinner className="animate-spin text-orange-500 text-3xl" />
-            <span>Processing invoice transaction...</span>
-          </div>
-        </div>
-      )}
+      {checkoutLoading && <LoadingOverlay message="Processing invoice transaction..." />}
 
       {/* LEFT: PRODUCTS BROWSER */}
       <div className="flex-1 p-6 space-y-6 flex flex-col xl:h-full xl:overflow-y-auto">
@@ -390,11 +384,7 @@ function POS() {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 relative">
-          {productsLoading && (
-            <div className="col-span-full py-16 flex items-center justify-center">
-              <FaSpinner className="animate-spin text-orange-500 text-2xl" />
-            </div>
-          )}
+          {productsLoading && <LoadingOverlay message="Loading billing products..." />}
           
           {filteredProducts.map((product) => {
             const outOfStock = product.stock <= 0;

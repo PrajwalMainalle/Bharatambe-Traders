@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { IoSearch } from "react-icons/io5";
 import { FaBoxes, FaPlus, FaTimes, FaEdit, FaTrashAlt, FaExclamationTriangle, FaSpinner } from "react-icons/fa";
 import { fetchProducts, addProduct, updateProduct, deleteProduct } from "../inventorySlice";
+import LoadingOverlay from "../../../components/LoadingOverlay";
 
 function ProductList() {
   const dispatch = useDispatch();
@@ -299,11 +300,7 @@ function ProductList() {
 
         {/* Inventory list Table */}
         <div className="bg-slate-900/30 border border-slate-900 rounded-xl overflow-hidden shadow-lg relative">
-          {loading && (
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 rounded-xl">
-              <FaSpinner className="animate-spin text-orange-500 text-2xl" />
-            </div>
-          )}
+          {loading && <LoadingOverlay message="Retrieving inventory items..." />}
           
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs md:text-sm">

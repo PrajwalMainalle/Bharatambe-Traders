@@ -2,10 +2,13 @@ import { HiOutlineMenu } from "react-icons/hi";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import defaultLogo from "../assets/SLLogo.png";
+import { useTheme } from "./ThemeContext";
+import { FaSun, FaMoon, FaClock } from "react-icons/fa";
 
 const Headers = ({ onMenuClick }) => {
   const location = useLocation();
   const { user } = useSelector((state) => state.auth);
+  const { themeMode, theme, selectThemeMode } = useTheme();
 
   const getPageName = () => {
     const path = location.pathname.split("/").filter(Boolean);
@@ -27,11 +30,11 @@ const Headers = ({ onMenuClick }) => {
   return (
     <header className="flex items-center justify-between 
         bg-slate-900 border-b border-slate-800
-        shadow px-6 h-16 text-white z-35">
+        shadow px-6 h-16 text-slate-100 z-35">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="md:hidden p-2 rounded hover:bg-slate-800 text-white"
+          className="md:hidden p-2 rounded hover:bg-slate-800 text-slate-100"
         >
           <HiOutlineMenu size={22} />
         </button>
@@ -39,6 +42,35 @@ const Headers = ({ onMenuClick }) => {
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Theme Cycle Button */}
+        <button
+          onClick={() => {
+            const nextModes = { auto: "light", light: "dark", dark: "auto" };
+            selectThemeMode(nextModes[themeMode]);
+          }}
+          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700/50 hover:border-slate-600 transition flex items-center gap-1.5 shadow-sm"
+          title={`Theme: ${themeMode === "auto" ? "Auto (Time-based)" : themeMode.toUpperCase()}`}
+        >
+          {themeMode === "auto" && (
+            <>
+              <FaClock className="text-orange-400 text-sm animate-pulse" />
+              <span className="text-[10px] font-bold text-slate-400 hidden md:inline">AUTO</span>
+            </>
+          )}
+          {themeMode === "light" && (
+            <>
+              <FaSun className="text-amber-500 text-sm" />
+              <span className="text-[10px] font-bold text-slate-400 hidden md:inline">LIGHT</span>
+            </>
+          )}
+          {themeMode === "dark" && (
+            <>
+              <FaMoon className="text-indigo-400 text-sm" />
+              <span className="text-[10px] font-bold text-slate-400 hidden md:inline">DARK</span>
+            </>
+          )}
+        </button>
+
         <div className="hidden lg:flex flex-col text-right">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">Merchant Portal</span>
           <span className="text-xs font-semibold text-orange-400">{ownerName}</span>

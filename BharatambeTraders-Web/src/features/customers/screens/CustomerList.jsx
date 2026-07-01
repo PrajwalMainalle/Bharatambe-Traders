@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { IoSearch } from "react-icons/io5";
 import { FaUserFriends, FaPlus, FaTimes, FaEdit, FaTrashAlt, FaSpinner } from "react-icons/fa";
 import { fetchCustomers, addCustomer, updateCustomer, deleteCustomer } from "../customerSlice";
+import LoadingOverlay from "../../../components/LoadingOverlay";
 
 function CustomerList() {
   const dispatch = useDispatch();
@@ -236,11 +237,7 @@ function CustomerList() {
 
         {/* Customer list Table */}
         <div className="bg-slate-900/30 border border-slate-900 rounded-xl overflow-hidden shadow-lg relative">
-          {loading && (
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 rounded-xl">
-              <FaSpinner className="animate-spin text-orange-500 text-2xl" />
-            </div>
-          )}
+          {loading && <LoadingOverlay message="Fetching customer records..." />}
           
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs md:text-sm">

@@ -9,7 +9,7 @@ const MainLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
+    <div className="flex h-screen overflow-hidden bg-layout-bg">
       {/* Sidebar */}
       <Sidebar
         mobileOpen={mobileOpen}

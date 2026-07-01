@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { updateProfile, getProfile } from "../../auth/authSlice";
 import axiosInstance from "../../../app/api/axiosInstance";
 import { FaStore, FaFileInvoice, FaMapMarkerAlt, FaPhoneAlt, FaEnvelope, FaImage, FaCheckCircle, FaSpinner, FaExclamationTriangle, FaTrash, FaDatabase, FaBan } from "react-icons/fa";
+import LoadingOverlay from "../../../components/LoadingOverlay";
 
 function Settings() {
   const dispatch = useDispatch();
@@ -122,6 +123,7 @@ function Settings() {
 
   return (
     <div className="w-full bg-slate-950 text-slate-100 min-h-screen p-4 md:p-8 rounded-2xl border border-slate-900">
+      {loading && <LoadingOverlay message="Updating system configuration..." />}
       <div className="max-w-4xl mx-auto space-y-6">
         
         {/* Header */}

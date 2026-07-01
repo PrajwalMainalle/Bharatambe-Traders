@@ -4,6 +4,7 @@ import { IoSearch } from "react-icons/io5";
 import { FaFileInvoice, FaPrint, FaTimes, FaUndo, FaCheckCircle, FaExclamationCircle, FaSpinner, FaDownload } from "react-icons/fa";
 import { fetchInvoices, refundInvoice, convertQuotation, settleInvoice } from "../billingSlice";
 import { fetchProducts } from "../../inventory/inventorySlice";
+import LoadingOverlay from "../../../components/LoadingOverlay";
 import logo from "../../../assets/SLLogo.png";
 
 function InvoiceList() {
@@ -261,11 +262,7 @@ function InvoiceList() {
 
         {/* Invoice listing Table */}
         <div className="bg-slate-900/30 border border-slate-900 rounded-xl overflow-hidden shadow-lg relative">
-          {loading && (
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 rounded-xl">
-              <FaSpinner className="animate-spin text-orange-500 text-2xl" />
-            </div>
-          )}
+          {loading && <LoadingOverlay message="Loading invoice history..." />}
           
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs md:text-sm">

@@ -11,6 +11,7 @@ import {
   FaFileInvoice,
   FaSpinner
 } from "react-icons/fa";
+import LoadingOverlay from "../../../components/LoadingOverlay";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -35,12 +36,7 @@ function Dashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-slate-400 gap-2">
-        <FaSpinner className="animate-spin text-orange-500 text-2xl" />
-        <span>Loading merchant console...</span>
-      </div>
-    );
+    return <LoadingOverlay message="Loading merchant console..." />;
   }
 
   if (error || !data) {

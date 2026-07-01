@@ -51,7 +51,7 @@ const SideBar = ({
     <aside
       className={`
         fixed md:relative top-0 left-0 h-full z-40
-        bg-[#0B132B] text-white flex flex-col
+        bg-sidebar-bg text-sidebar-text flex flex-col
         transition-all duration-300
         ${collapsed ? "w-20" : "w-64"}
         ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
@@ -59,7 +59,7 @@ const SideBar = ({
       `}
     >
       {/* Top */}
-      <div className="flex items-center justify-between px-4 h-16 border-b border-gray-700">
+      <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-border">
         {!collapsed && (
           <h1 className="text-sm font-black tracking-wider uppercase text-orange-400 truncate max-w-[170px]" title={displayName}>
             {displayName}
@@ -70,7 +70,7 @@ const SideBar = ({
           {/* Collapse - Desktop only */}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden md:flex p-2 bg-gray-800 rounded hover:bg-gray-750"
+            className="hidden md:flex p-2 bg-sidebar-active rounded hover:bg-sidebar-active/80"
           >
             {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
           </button>
@@ -78,7 +78,7 @@ const SideBar = ({
           {/* Close - Mobile only */}
           <button
             onClick={() => setMobileOpen(false)}
-            className="md:hidden p-2 bg-gray-800 rounded hover:bg-gray-750"
+            className="md:hidden p-2 bg-sidebar-active rounded hover:bg-sidebar-active/80"
           >
             <FaTimes />
           </button>
@@ -97,10 +97,10 @@ const SideBar = ({
                 `flex items-center gap-3 px-4 py-3 mx-3 rounded-lg transition
                 ${
                   isActive
-                    ? "bg-[#1f2b46] text-orange-400"
-                    : "text-gray-300"
+                    ? "bg-sidebar-active text-orange-400"
+                    : "text-sidebar-subtext"
                 }
-                hover:bg-[#162036] hover:text-orange-400`
+                hover:bg-sidebar-active hover:text-orange-400`
               }
             >
               <Icon className="text-base" />
@@ -120,10 +120,10 @@ const SideBar = ({
                 `flex items-center gap-3 px-4 py-3 mx-3 rounded-lg transition
                 ${
                   isActive
-                    ? "bg-[#1f2b46] text-orange-400"
-                    : "text-gray-300"
+                    ? "bg-sidebar-active text-orange-400"
+                    : "text-sidebar-subtext"
                 }
-                hover:bg-[#162036] hover:text-orange-400`
+                hover:bg-sidebar-active hover:text-orange-400`
               }
             >
               <Icon className="text-base" />
@@ -134,10 +134,10 @@ const SideBar = ({
       </nav>
 
       {/* Logout Trigger */}
-      <div className="px-3 py-2 border-t border-gray-700">
+      <div className="px-3 py-2 border-t border-sidebar-border">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-gray-350 hover:bg-[#162036] hover:text-red-400 transition text-left"
+          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sidebar-subtext hover:bg-sidebar-active hover:text-red-400 transition text-left"
         >
           <FaSignOutAlt className="text-base text-red-500" />
           {!collapsed && <span className="font-semibold text-xs text-red-400">Log Out</span>}
@@ -145,9 +145,9 @@ const SideBar = ({
       </div>
 
       {/* Bottom  */}
-      <div className="p-4 border-t border-gray-700 text-center">
+      <div className="p-4 border-t border-sidebar-border text-center">
         {!collapsed && (
-          <p className="text-[10px] text-gray-500">
+          <p className="text-[10px] text-sidebar-subtext/70">
             &copy; {getCurrentYear()} {displayName.slice(0, 18)}
           </p>
         )}

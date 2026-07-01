@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axiosInstance from "../../../app/api/axiosInstance";
 import { FaFileCsv, FaPrint, FaSpinner, FaChartBar, FaUserFriends, FaBoxes, FaPercent } from "react-icons/fa";
+import LoadingOverlay from "../../../components/LoadingOverlay";
 
 function Reports() {
   const [activeTab, setActiveTab] = useState("sales");
@@ -54,12 +55,7 @@ function Reports() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-slate-400 gap-2">
-        <FaSpinner className="animate-spin text-orange-500 text-2xl" />
-        <span>Compiling financial logs...</span>
-      </div>
-    );
+    return <LoadingOverlay message="Compiling financial logs..." />;
   }
 
   if (error) {
