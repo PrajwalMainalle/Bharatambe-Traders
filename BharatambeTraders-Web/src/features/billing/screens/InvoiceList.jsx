@@ -177,7 +177,7 @@ function InvoiceList() {
         
         {/* Header */}
         <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Invoice History Log</h2>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-100 tracking-tight">Invoice History Log</h2>
           <p className="text-slate-400 text-sm mt-1">Review transactions, issue returns/refunds, and reprint invoices.</p>
         </div>
 
@@ -191,15 +191,15 @@ function InvoiceList() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">Gross Sales</span>
-            <p className="text-xl font-bold text-white mt-1">₹{totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p>
+            <p className="text-xl font-bold text-slate-100 mt-1">₹{totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">Active Invoices</span>
-            <p className="text-xl font-bold text-white mt-1">{activeInvoices.length} Bills</p>
+            <p className="text-xl font-bold text-slate-100 mt-1">{activeInvoices.length} Bills</p>
           </div>
           <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">Avg ticket value</span>
-            <p className="text-xl font-bold text-white mt-1">₹{averageTicket.toFixed(2)}</p>
+            <p className="text-xl font-bold text-slate-100 mt-1">₹{averageTicket.toFixed(2)}</p>
           </div>
           <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl border-purple-900/40">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-purple-400">Outstanding Credit</span>
@@ -338,7 +338,7 @@ function InvoiceList() {
                           </span>
                         )}
                       </td>
-                      <td className="py-4 px-2 text-right font-black text-white">₹{inv.total.toFixed(2)}</td>
+                      <td className="py-4 px-2 text-right font-black text-slate-100">₹{inv.total.toFixed(2)}</td>
                       <td className="py-4 px-4 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button 
@@ -398,7 +398,7 @@ function InvoiceList() {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-5xl overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]">
             
             <div className="bg-slate-950 px-6 py-4 flex items-center justify-between border-b border-slate-900">
-              <h3 className="font-bold text-white flex items-center gap-2">
+              <h3 className="font-bold text-slate-100 flex items-center gap-2">
                 <FaFileInvoice className="text-orange-500" /> {selectedInvoice.status === "Quotation" ? "Quotation / Estimate Details" : "Invoice Details"}
               </h3>
               <button 
@@ -658,7 +658,7 @@ function InvoiceList() {
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative">
             <div className="bg-slate-950 px-5 py-3.5 flex items-center justify-between border-b border-slate-900">
-              <h3 className="font-bold text-white flex items-center gap-2 text-xs">
+              <h3 className="font-bold text-slate-100 flex items-center gap-2 text-xs">
                 <FaCheckCircle className="text-purple-400" /> Settle Credit Outstanding
               </h3>
               <button 
@@ -673,7 +673,7 @@ function InvoiceList() {
             <form onSubmit={handleSettleSubmit} className="p-5 space-y-4 text-xs">
               <div>
                 <p className="text-slate-400 mb-1">Settling payment for invoice:</p>
-                <p className="font-mono text-sm font-bold text-white">{settleForm.invoiceCode}</p>
+                <p className="font-mono text-sm font-bold text-slate-100">{settleForm.invoiceCode}</p>
               </div>
 
               <div className="space-y-1.5">

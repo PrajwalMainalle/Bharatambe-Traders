@@ -74,7 +74,7 @@ function Reports() {
       {/* SCREEN HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 print:hidden">
         <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Business Reports &amp; Analytics</h2>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-100 tracking-tight">Business Reports &amp; Analytics</h2>
           <p className="text-slate-400 text-sm mt-1">Audit daily velocity, product movements, tax collections, and customer insights.</p>
         </div>
         <div className="flex gap-3">
@@ -228,7 +228,7 @@ function Reports() {
                       <td className="py-3 px-4 font-mono text-slate-450">{row.sku}</td>
                       <td className="py-3 px-2 font-semibold text-slate-100 notranslate" translate="no">{row.name}</td>
                       <td className="py-3 px-2 text-center font-bold text-orange-400">{row.qty}</td>
-                      <td className="py-3 px-4 text-right font-black text-white">₹{row.revenue.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right font-black text-slate-100">₹{row.revenue.toFixed(2)}</td>
                     </tr>
                   ))}
                   {reportData.productReport.length === 0 && (
@@ -304,7 +304,7 @@ function Reports() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-xl border border-slate-900 bg-slate-950/40 text-center">
               <div>
                 <p className="text-slate-500 text-[10px] uppercase font-semibold">Total Taxable Value</p>
-                <p className="text-lg font-bold text-white mt-1">₹{reportData.gstReport.summary.totalTaxable.toFixed(2)}</p>
+                <p className="text-lg font-bold text-slate-100 mt-1">₹{reportData.gstReport.summary.totalTaxable.toFixed(2)}</p>
               </div>
               <div className="border-l border-slate-900">
                 <p className="text-slate-500 text-[10px] uppercase font-semibold">Central GST (CGST)</p>

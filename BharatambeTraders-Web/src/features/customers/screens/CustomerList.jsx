@@ -166,7 +166,7 @@ function CustomerList() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Customer Management</h2>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-100 tracking-tight">Customer Management</h2>
             <p className="text-slate-400 text-sm mt-1">Configure customer types, assign selling price categories, and view buyer contact lists.</p>
           </div>
           <button 
@@ -187,19 +187,19 @@ function CustomerList() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">Total Registered</span>
-            <p className="text-xl font-bold text-white mt-1">{totalCustomers} Customers</p>
+            <p className="text-xl font-bold text-slate-100 mt-1">{totalCustomers} Customers</p>
           </div>
           <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">Retail Buyers</span>
-            <p className="text-xl font-bold text-white mt-1">{retailCount} Accounts</p>
+            <p className="text-xl font-bold text-slate-100 mt-1">{retailCount} Accounts</p>
           </div>
           <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">School Clients</span>
-            <p className="text-xl font-bold text-white mt-1">{schoolCount} Clients</p>
+            <p className="text-xl font-bold text-slate-100 mt-1">{schoolCount} Clients</p>
           </div>
           <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">Wholesale / Dealers</span>
-            <p className="text-xl font-bold text-white mt-1">{wholesaleCount} Traders</p>
+            <p className="text-xl font-bold text-slate-100 mt-1">{wholesaleCount} Traders</p>
           </div>
         </div>
 
@@ -306,7 +306,7 @@ function CustomerList() {
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
             <div className="bg-slate-950 px-6 py-4 flex items-center justify-between border-b border-slate-900">
-              <h3 className="font-bold text-white flex items-center gap-2">
+              <h3 className="font-bold text-slate-100 flex items-center gap-2">
                 <FaUserFriends className="text-orange-500" /> Add New Customer Profile
               </h3>
               <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-200">
@@ -407,7 +407,7 @@ function CustomerList() {
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
             <div className="bg-slate-950 px-6 py-4 flex items-center justify-between border-b border-slate-900">
-              <h3 className="font-bold text-white flex items-center gap-2">
+              <h3 className="font-bold text-slate-100 flex items-center gap-2">
                 <FaEdit className="text-orange-500" /> Edit Customer Profile
               </h3>
               <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-200">

@@ -128,7 +128,7 @@ function Settings() {
         
         {/* Header */}
         <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Business Profile Settings</h2>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-100 tracking-tight">Business Profile Settings</h2>
           <p className="text-slate-400 text-sm mt-1">Configure invoice branding, tax details, logo uploads, and address variables.</p>
         </div>
 
@@ -321,7 +321,7 @@ function Settings() {
           </h3>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <h4 className="text-white font-bold text-sm">Reset Business Data</h4>
+              <h4 className="text-slate-100 font-bold text-sm">Reset Business Data</h4>
               <p className="text-slate-400 text-xs max-w-xl">
                 Permanently delete all sales invoices, quotations, transactions, and reports history. 
                 Your inventory products, categories, base user profile, and configurations will remain untouched.
@@ -350,7 +350,7 @@ function Settings() {
                 <FaExclamationTriangle className="text-xl" />
               </div>
               <div>
-                <h3 className="text-white font-extrabold text-base">Reset Business Data</h3>
+                <h3 className="text-slate-100 font-extrabold text-base">Reset Business Data</h3>
                 <p className="text-[10px] text-slate-400">Irreversible Action &bull; Super Admin Console</p>
               </div>
             </div>
@@ -395,7 +395,7 @@ function Settings() {
 
                   <div className="space-y-2">
                     <label className="text-slate-400 font-semibold block">
-                      To proceed, type <span className="text-white font-bold tracking-widest bg-slate-950 px-2 py-0.5 rounded border border-slate-850">RESET</span> below:
+                      To proceed, type <span className="text-slate-100 font-bold tracking-widest bg-slate-950 px-2 py-0.5 rounded border border-slate-850">RESET</span> below:
                     </label>
                     <input
                       type="text"
@@ -435,7 +435,7 @@ function Settings() {
                   </div>
                   
                   <div className="space-y-2">
-                    <h4 className="text-sm font-bold text-white">Resetting Business Terminal...</h4>
+                    <h4 className="text-sm font-bold text-slate-100">Resetting Business Terminal...</h4>
                     <p className="text-[10px] text-slate-500">Please do not close this window or navigate away.</p>
                   </div>
 
@@ -450,7 +450,7 @@ function Settings() {
                       `}>
                         1
                       </div>
-                      <span className={`text-[10px] ${resetProgressStep === 1 ? "text-white font-bold" : "text-slate-500"}`}>
+                      <span className={`text-[10px] ${resetProgressStep === 1 ? "text-slate-100 font-bold" : "text-slate-500"}`}>
                         Creating database backup...
                       </span>
                     </div>
@@ -464,7 +464,7 @@ function Settings() {
                       `}>
                         2
                       </div>
-                      <span className={`text-[10px] ${resetProgressStep === 2 ? "text-white font-bold" : "text-slate-500"}`}>
+                      <span className={`text-[10px] ${resetProgressStep === 2 ? "text-slate-100 font-bold" : "text-slate-500"}`}>
                         Purging invoices &amp; transaction files...
                       </span>
                     </div>
@@ -478,7 +478,7 @@ function Settings() {
                       `}>
                         3
                       </div>
-                      <span className={`text-[10px] ${resetProgressStep === 3 ? "text-white font-bold" : "text-slate-500"}`}>
+                      <span className={`text-[10px] ${resetProgressStep === 3 ? "text-slate-100 font-bold" : "text-slate-500"}`}>
                         Resetting reports cache...
                       </span>
                     </div>
@@ -492,7 +492,7 @@ function Settings() {
                     <FaCheckCircle size={36} />
                   </div>
                   <div className="space-y-1.5">
-                    <h4 className="text-base font-extrabold text-white">Reset Completed Successfully!</h4>
+                    <h4 className="text-base font-extrabold text-slate-100">Reset Completed Successfully!</h4>
                     <p className="text-slate-400 text-[11px] max-w-sm">
                       All transaction histories and invoice PDF documents have been purged. Inventory stocks and master configurations are preserved.
                     </p>
@@ -519,7 +519,7 @@ function Settings() {
                     <FaExclamationTriangle size={36} />
                   </div>
                   <div className="space-y-1.5">
-                    <h4 className="text-base font-extrabold text-white">Purge Failed</h4>
+                    <h4 className="text-base font-extrabold text-slate-100">Purge Failed</h4>
                     <p className="text-rose-450 text-[11px] max-w-sm">{resetError}</p>
                   </div>
                   <button
